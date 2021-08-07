@@ -13,8 +13,7 @@ If you like my work please consider supporting my caffeine addiction!
 The program expects files in the following structure:
 
 - `/YourProjectFolder` - Path that is input as command line argument, `thingideploy.py /home/user/MyProjectFolder`
-  - `/3mf`      - Location for 3mf prusaslicer project files
   - `/gcode`    - Location for sliced gcode files
   - `/img`      - Location for images
   - `/source`   - Location for project source file, FreeCAD, OpenSCAD project file etc.
-  - `/stl`      - Location for printable 3d files like stl, obj etc.
+  - `/3d`       - Location for printable 3d files like stl, obj etc.
