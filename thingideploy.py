@@ -2,6 +2,10 @@
 import argparse
 import json
 import os
+import requests
+import webbrowser
+from rauth import OAuth2Service
+
 
 def main():
     ##########################################################################
@@ -10,19 +14,36 @@ def main():
 
     # path
     parser = argparse.ArgumentParser(description='Upload 3D printing project to Thingiverse automatically')
-    parser.add_argument('path', type=str, nargs='?',
-                        help='Path to expected folder structure')
+    parser.add_argument('path', metavar='path', type=str,
+                        help='Path to expected folder structure')                  
+    parser.add_argument('token', metavar='token', type=str, 
+                        help='Thingiverse auth token')
+    parser.add_argument('clientid', metavar='clientid', type=str, 
+                        help='Thingiverse client id')
+    parser.add_argument('secret', metavar='secret', type=str, 
+                        help='Thingiverse client secret')
     args = parser.parse_args()
     
     # generate error if no path provided, no sanity check on type of path argument yet
-    if not (args.path):
-        parser.error('No path provided, please call with "thingideploy.py <PathToExpectedFileStructure>"')
+    if not os.path.isdir(args.path):
+        print('The path specified does not exist')
+        exit()
 
-    projectpath = args.path
+    projectpath     = args.path
+    auth_token      = args.token
+    client_id       = args.clientid
+    client_secret   = args.secret
 
     ##########################################################################
     ##                               Init                                   ##
     ##########################################################################
+
+    headers = {'Authorization': 'Bearer ' + auth_token}
+
+    flags =	{
+        "thingid":      "",
+        "published":    False
+    }
 
     # Intro message
     print()
@@ -56,6 +77,22 @@ def main():
         flags = json.load(f)
         print("Flags: ")
         print(flags)
+        print()
+
+        # check if thing already exists, if thingid is provided
+        if flags['thingid'] != '':
+            mode = "patch"
+            headers = {"Authorization": "Bearer " + auth_token}
+            thing = json.loads(requests.get('http://api.thingiverse.com/things/' + flags['thingid'], headers=headers).text)
+            if thing["name"] != '':
+                print("Thing already exists, running in patch mode, thing found:")
+                print(thing["name"])
+            else:
+                print("Thing ID specified in flags.json but thing doesn't exist, aborting")
+                exit()
+        else:
+            mode = "create"
+            print('Thing does not exist yet, running in creation mode')
         print()
 
     # 3D files
@@ -105,14 +142,59 @@ def main():
     ##########################################################################
     ##                     Thingiverse deployment                           ##
     ##########################################################################
+    #headers = {'Authorization': 'Bearer ' + auth_token}
+    #thing = json.loads(requests.get('http://api.thingiverse.com/things/4395209', headers=headers).text)
+    #print(thing["name"])
+
+    if mode == "create":
+        print("Creating thing")
+
+        # This line outputs auth html, which I cannot open via browser somehow
+        #Response = requests.get('https://www.thingiverse.com/login/oauth/authorize', headers=headers)
+        params = {'client_id': client_id, 'client_secret': client_secret}
+        Response = requests.post('https://www.thingiverse.com/login/oauth/access_token', data=json.dumps(params))
+        print(Response.text)
+
+
+        # paste in some stuff and hope it werks
+        Authservice = OAuth2Service(
+            name='thingiverse',
+            client_id=client_id,
+            client_secret=client_secret,
+            access_token_url='https://www.thingiverse.com/login/oauth/access_token',
+            authorize_url='https://www.thingiverse.com/login/oauth/authorize',
+            base_url='https://api.thingiverse.com')
+
+        # let's get the url to go to
+        authparams = {'redirect_uri': 'https://gitlab.com/chrismettal',
+                      'response_type': 'code'}
+        url = Authservice.get_authorize_url(**authparams)
+
+        webbrowser.open_new(url)
+
+        #access_code = raw_input("access token: >")
 
 
 
+
+
+
+        # initial file creation
+        #params = {'name': flags["thingname"], 'license': flags["license"], 'category': flags["category"]}
+        #CreationResponse = requests.post('http://api.thingiverse.com/things/', headers=headers, data=json.dumps(params)) 
+        #print(json.loads(CreationResponse.text))
+
+        # Update ThingID with newly created ID
+        #flags["thingid"] = 
+        #with open(flagpath, "w", encoding="utf-8") as f:
+        #    f.write(json.dumps(flags))
+
+    elif mode == "patch":
+        print("Patching thing")
+        pass
 
 ##########################################################################
 ##                        main() idiom                                  ##
 ##########################################################################
 if __name__ == '__main__':
     main()
-
-
