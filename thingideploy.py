@@ -22,6 +22,8 @@ def main():
                         help='Thingiverse client id')
     parser.add_argument('secret', metavar='secret', type=str, 
                         help='Thingiverse client secret')
+    parser.add_argument('newtoken', metavar='newtoken', type=str, 
+                        help='New Thingiverse token')
     args = parser.parse_args()
     
     # generate error if no path provided, no sanity check on type of path argument yet
@@ -33,15 +35,20 @@ def main():
     auth_token      = args.token
     client_id       = args.clientid
     client_secret   = args.secret
+    new_token       = args.newtoken
 
     ##########################################################################
     ##                               Init                                   ##
     ##########################################################################
 
-    headers = {'Authorization': 'Bearer ' + auth_token}
+    # version working for reading but writing is forbidden
+    #headers = {'Authorization': 'Bearer ' + auth_token}
+
+    # new version to try
+    headers = {'Authorization': 'Bearer ' + new_token}
 
     flags =	{
-        "thingid":      "",
+        "thingid":      "string",
         "published":    False
     }
 
@@ -82,8 +89,7 @@ def main():
         # check if thing already exists, if thingid is provided
         if flags['thingid'] != '':
             mode = "patch"
-            headers = {"Authorization": "Bearer " + auth_token}
-            thing = json.loads(requests.get('http://api.thingiverse.com/things/' + flags['thingid'], headers=headers).text)
+            thing = json.loads(requests.get('http://api.thingiverse.com/things/' + str(flags['thingid']), headers=headers).text)
             if thing["name"] != '':
                 print("Thing already exists, running in patch mode, thing found:")
                 print(thing["name"])
@@ -123,7 +129,6 @@ def main():
         print(file)
     print()
 
-
     # Images
     imgpath = projectpath + "/img"
     imgfiles = []
@@ -149,45 +154,33 @@ def main():
     if mode == "create":
         print("Creating thing")
 
-        # This line outputs auth html, which I cannot open via browser somehow
-        #Response = requests.get('https://www.thingiverse.com/login/oauth/authorize', headers=headers)
-        params = {'client_id': client_id, 'client_secret': client_secret}
-        Response = requests.post('https://www.thingiverse.com/login/oauth/access_token', data=json.dumps(params))
-        print(Response.text)
-
-
-        # paste in some stuff and hope it werks
-        Authservice = OAuth2Service(
-            name='thingiverse',
-            client_id=client_id,
-            client_secret=client_secret,
-            access_token_url='https://www.thingiverse.com/login/oauth/access_token',
-            authorize_url='https://www.thingiverse.com/login/oauth/authorize',
-            base_url='https://api.thingiverse.com')
-
-        # let's get the url to go to
-        authparams = {'redirect_uri': 'https://gitlab.com/chrismettal',
-                      'response_type': 'code'}
-        url = Authservice.get_authorize_url(**authparams)
-
-        webbrowser.open_new(url)
-
+        # paste in some stuff and hope it werks, getting a new authorized token or something
+        #Authservice = OAuth2Service(
+        #    name='thingiverse',
+        #    client_id=client_id,
+        #    client_secret=client_secret,
+        #    access_token_url='https://www.thingiverse.com/login/oauth/access_token',
+        #    authorize_url='https://www.thingiverse.com/login/oauth/authorize',
+        #    base_url='https://api.thingiverse.com')
+        ## let's get the url to go to
+        #authparams = {'redirect_uri': 'https://www.thingiverse.com',
+        #              'response_type': 'token'}
+        #url = Authservice.get_authorize_url(**authparams)
+        #webbrowser.open_new(url)
         #access_code = raw_input("access token: >")
 
-
-
-
-
-
         # initial file creation
-        #params = {'name': flags["thingname"], 'license': flags["license"], 'category': flags["category"]}
-        #CreationResponse = requests.post('http://api.thingiverse.com/things/', headers=headers, data=json.dumps(params)) 
-        #print(json.loads(CreationResponse.text))
-
+        params = {'name': flags["thingname"], 'license': flags["license"], 'category': flags["category"]}
+        CreationResponse = requests.post('http://api.thingiverse.com/things/', headers=headers, data=json.dumps(params))
+        NewThingId = json.loads(CreationResponse.text)["id"]
+        if NewThingId != '':
+            print("Thing created succesful, Thing ID:")
+            print(NewThingId)
+        
         # Update ThingID with newly created ID
-        #flags["thingid"] = 
-        #with open(flagpath, "w", encoding="utf-8") as f:
-        #    f.write(json.dumps(flags))
+        flags["thingid"] = NewThingId
+        with open(flagpath, "w", encoding="utf-8") as f:
+            f.write(json.dumps(flags))
 
     elif mode == "patch":
         print("Patching thing")
