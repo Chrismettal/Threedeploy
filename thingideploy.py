@@ -16,8 +16,6 @@ def main():
     parser = argparse.ArgumentParser(description='Upload 3D printing project to Thingiverse automatically')
     parser.add_argument('path', metavar='path', type=str,
                         help='Path to expected folder structure')                  
-    parser.add_argument('token', metavar='token', type=str, 
-                        help='Thingiverse auth token')
     parser.add_argument('clientid', metavar='clientid', type=str, 
                         help='Thingiverse client id')
     parser.add_argument('secret', metavar='secret', type=str, 
@@ -32,7 +30,6 @@ def main():
         exit()
 
     projectpath     = args.path
-    auth_token      = args.token
     client_id       = args.clientid
     client_secret   = args.secret
     new_token       = args.newtoken
@@ -41,16 +38,8 @@ def main():
     ##                               Init                                   ##
     ##########################################################################
 
-    # version working for reading but writing is forbidden
-    #headers = {'Authorization': 'Bearer ' + auth_token}
-
-    # new version to try
+    # new token has read and write acces, only created manually with URL popup, using client_id and client_secret
     headers = {'Authorization': 'Bearer ' + new_token}
-
-    flags =	{
-        "thingid":      "string",
-        "published":    False
-    }
 
     # Intro message
     print()
@@ -90,11 +79,10 @@ def main():
         if flags['thingid'] != '':
             mode = "patch"
             thing = json.loads(requests.get('http://api.thingiverse.com/things/' + str(flags['thingid']), headers=headers).text)
-            if thing["name"] != '':
-                print("Thing already exists, running in patch mode, thing found:")
-                print(thing["name"])
-            else:
-                print("Thing ID specified in flags.json but thing doesn't exist, aborting")
+            if thing["name"] == flags["thingid"]:
+                print("Thing already exists, running in patch mode")
+            elif thing["name"] == "":
+                print("Thing ID specified in flags.json but thing doesn't exist or name doesn't match, aborting")
                 exit()
         else:
             mode = "create"
@@ -171,8 +159,8 @@ def main():
 
         # initial file creation
         params = {'name': flags["thingname"], 'license': flags["license"], 'category': flags["category"]}
-        CreationResponse = requests.post('http://api.thingiverse.com/things/', headers=headers, data=json.dumps(params))
-        NewThingId = json.loads(CreationResponse.text)["id"]
+        thing = json.loads(requests.post('http://api.thingiverse.com/things/', headers=headers, data=json.dumps(params)))
+        NewThingId = thing["id"]
         if NewThingId != '':
             print("Thing created succesful, Thing ID:")
             print(NewThingId)
@@ -184,7 +172,14 @@ def main():
 
     elif mode == "patch":
         print("Patching thing")
-        pass
+
+
+    # Uploads need to be done the same, no matter if creating or patching mode is active
+    
+    params = {'description': 'desc'}
+    response = requests.patch('http://api.thingiverse.com/things/' + str(flags["thingid"]) + "/", headers=headers, data=json.dumps(params))
+    print(response.text)
+
 
 ##########################################################################
 ##                        main() idiom                                  ##
