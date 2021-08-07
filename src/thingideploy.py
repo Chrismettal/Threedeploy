@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import argparse
 import json
+import os
 
 def main():
     ##########################################################################
@@ -57,12 +58,55 @@ def main():
         print(flags)
         print()
 
+    # 3D files
+    threedpath = projectpath + "/3d"
+    threedfiles = []
+    for file in os.listdir(threedpath):
+        if (file.endswith(".stl")  or
+            file.endswith(".obj")  or
+            file.endswith(".stp")  or
+            file.endswith(".STEP") or
+            file.endswith(".3mf")):
+            threedfiles.append(os.path.join(threedpath, file))
+
+    print("Found 3D files: ")
+    for file in threedfiles:
+        print(file)
+    print()
+
+    # Gcodes
+    gcodepath = projectpath + "/gcode"
+    gcodefiles = []
+    for file in os.listdir(gcodepath):
+        if (file.endswith(".gcode")):
+            gcodefiles.append(os.path.join(gcodepath, file))
+
+    print("Found gcode files: ")
+    for file in gcodefiles:
+        print(file)
+    print()
+
+
+    # Images
+    imgpath = projectpath + "/img"
+    imgfiles = []
+    for file in os.listdir(imgpath):
+        if (file.endswith(".png")  or
+            file.endswith(".jpg")  or
+            file.endswith(".bmp")):
+            imgfiles.append(os.path.join(imgpath, file))
+
+    print("Found image files: ")
+    for file in imgfiles:
+        print(file)
+    print()
+
 
     ##########################################################################
     ##                     Thingiverse deployment                           ##
     ##########################################################################
 
-    
+
 
 
 ##########################################################################
