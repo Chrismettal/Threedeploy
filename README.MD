@@ -1,4 +1,4 @@
-# Python-Thingideploy <!-- omit in toc -->
+# Python-Thingideploy
 
 ![Logo](img/Logo.png)
 
@@ -8,10 +8,13 @@ If you like my work please consider supporting my caffeine addiction!
 
 <a href='https://ko-fi.com/U7U6G0X3' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://az743702.vo.msecnd.net/cdn/kofi4.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
-## Table of contents <!-- omit in toc -->
+## Expected folder structure
 
-- [The concept](#the-concept)
+The program expects files in the following structure:
 
-## The concept
-
-Testo
+- `/YourProjectFolder` - Path that is input as command line argument, `thingideploy.py /home/user/MyProjectFolder`
+  - `/3mf`      - Location for 3mf prusaslicer project files
+  - `/gcode`    - Location for sliced gcode files
+  - `/img`      - Location for images
+  - `/source`   - Location for project source file, FreeCAD, OpenSCAD project file etc.
+  - `/stl`      - Location for printable 3d files like stl, obj etc.
