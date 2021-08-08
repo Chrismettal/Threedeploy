@@ -4,6 +4,7 @@ import json
 import os
 import requests
 import webbrowser
+import time
 from rauth import OAuth2Service
 
 def request_token(client_id):
@@ -53,14 +54,14 @@ def deploy_project(project_path, api_token):
         print(thingdata)
         print()
 
-        # check if thing already exists, if thingid is provided
-        if thingdata["thingid"] != "":
+        # check if thing already exists, if id is provided
+        if thingdata["id"] != "":
             mode = "patch"
             thing = json.loads(
                         requests.get("http://api.thingiverse.com/things/" 
-                                    + str(thingdata["thingid"]), 
+                                    + str(thingdata["id"]), 
                                     headers=headers).text)
-            if thing["id"] == thingdata["thingid"]:
+            if thing["id"] == thingdata["id"]:
                 print("Thing already exists, running in patch mode")
             else:
                 print("""Thing ID specified in flags.json but thing doesn't
@@ -109,8 +110,8 @@ def deploy_project(project_path, api_token):
     imgpath = project_path + "/img"
     imgfiles = []
     for file in os.listdir(imgpath):
-        if (file.endswith(".png")  or
-            file.endswith(".jpg")  or
+        if (file.endswith(".png") or
+            file.endswith(".jpg") or
             file.endswith(".bmp")):
             imgfiles.append(os.path.join(imgpath, file))
     print("Found image files: ")
@@ -122,16 +123,21 @@ def deploy_project(project_path, api_token):
     ##                     Thingiverse deployment                           ##
     ##########################################################################
     
-########## Thing creation
 
+########## Thing creation
     # If ID wasn't already found, first create thing
     if mode == "create":
+
         print("Creating thing")
 
         # initial file creation
-        params = {  "name":     thingdata["thingname"],
-                    "license":  thingdata["license"], 
-                    "category": thingdata["category"]}
+        params = {"name":           thingdata["name"],
+                  "license":        thingdata["license"],
+                  "category":       thingdata["category"],
+                 #"description":    "AutoDescription",
+                 #"instructions":   "None provided",
+                  "is_wip":         thingdata["is_wip"],
+                  "tags":           thingdata["tags"]}
         thing = json.loads(
                         requests.post("http://api.thingiverse.com/things/",
                         headers=headers,
@@ -149,35 +155,66 @@ def deploy_project(project_path, api_token):
             print(new_thing_id)
         
         # Update flags document with newly created ID
-        thingdata["thingid"] = new_thing_id
+        thingdata["id"] = new_thing_id
         with open(datapath, "w", encoding="utf-8") as f:
             f.write(json.dumps(thingdata, indent=4))
 
-    # Otherwise, just output a patching message
+
+########## Thing info patching  
+    # Otherwise, go into patching mode
     elif mode == "patch":
+        
         print("Patching thing")
 
-########## Thing info patching    
 
-    params = {"is_wip": thingdata["is_wip"]}
-    patch = json.loads(requests.patch("http://api.thingiverse.com/things/"
-                                + str(thingdata["thingid"])
-                                + "/", headers=headers,
-                                data=json.dumps(params)).text)
+        params = {"name":           thingdata["name"],
+                 "license":        thingdata["license"],
+                 "category":       thingdata["category"],
+                #"description":    "AutoDescription",
+                #"instructions":   "None provided",
+                 "is_wip":         thingdata["is_wip"],
+                 "tags":           thingdata["tags"]}
+        requests.patch("http://api.thingiverse.com/things/"
+                                    + str(thingdata["id"])
+                                    + "/", headers=headers,
+                                    data=json.dumps(params))
 
-    # Output response to file for debugging, loads and dumps formats document
-    with open(project_path + "/PatchResponse.json", "w") as f:
-            f.write(json.dumps(patch, indent=4))
+        # wait a tick before pulling an answer
+        # since Thingiverse does not populate answers instantly
+        print("waiting on Thingiverse")
+        time.sleep(2) 
 
-    # check if valid answer received
-    if patch["id"] == thingdata["thingid"]:
-        print("Thing patching succesful")
+        patch = json.loads(requests.get("http://api.thingiverse.com/things/"
+                                    + str(thingdata["id"])
+                                    + "/", headers=headers).text)
+
+        # Output response to file for debugging, loads and dumps formats document
+        with open(project_path + "/PatchResponse.json", "w") as f:
+                f.write(json.dumps(patch, indent=4))
+
+        # check if valid answer received
+        if patch["id"] == thingdata["id"]:
+            print("Thing patching succesful")
     
+########## File checks
+
+    pass
+
 ########## File uploads
 
     pass
 
+
 def main():
+    ##########################################################################
+    ##                              Intro                                   ##
+    ##########################################################################
+    print()
+    print("----------------------------------------")
+    print("---------- Thingideploy start ----------")
+    print("----------------------------------------")
+    print()
+
     ##########################################################################
     ##                            Arguments                                 ##
     ##########################################################################
