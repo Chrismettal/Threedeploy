@@ -214,7 +214,7 @@ def deploy_project(project_path, api_token):
 
     # open up transfer
     print("Opening transfer")
-    params = {"filename":threedfiles[1]}
+    params = {"filename":threedfiles[0]}
     upload_creds = json.loads(
                     requests.post("http://api.thingiverse.com/things/"
                                     + str(thingdata["id"])
@@ -226,45 +226,58 @@ def deploy_project(project_path, api_token):
 
     # actually transfer
     print("Starting transfer")
-    file = {'file': open(threedfilepaths[1], 'rb')}
+    
 
-
+#---------------MultipartEncoder version
     # pls don't look at this, i'm desperate
-    mp_encoder = MultipartEncoder(
-        fields={
-            "AWSAccessKeyId":upload_creds["fields"]["AWSAccessKeyId"],
-            "bucket":upload_creds["fields"]["bucket"],
-            "key":upload_creds["fields"]["key"],
-            "acl":upload_creds["fields"]["acl"],
-            "policy":upload_creds["fields"]["policy"],
-            "signature":upload_creds["fields"]["signature"],
-            "success_action_redirect":upload_creds["fields"]["success_action_redirect"],
-            "Content-Type":upload_creds["fields"]["Content-Type"],
-            "Content-Disposition":upload_creds["fields"]["Content-Disposition"],
-            "file":("filename", open(threedfilepaths[1], "rb"), "binary")
-        }
-    )
+    #mp_encoder = MultipartEncoder(
+    #    fields={
+    #        "AWSAccessKeyId":upload_creds["fields"]["AWSAccessKeyId"],
+    #        "bucket":upload_creds["fields"]["bucket"],
+    #        "key":upload_creds["fields"]["key"],
+    #        "acl":upload_creds["fields"]["acl"],
+    #        "policy":upload_creds["fields"]["policy"],
+    #        "signature":upload_creds["fields"]["signature"],
+    #        "success_action_redirect":upload_creds["fields"]["success_action_redirect"],
+    #        "Content-Type":upload_creds["fields"]["Content-Type"],
+    #        "Content-Disposition":upload_creds["fields"]["Content-Disposition"],
+    #        "file":(threedfiles[1], open(threedfilepaths[1], "rb"), "text/plain")
+    #    }
+    #)
 
+    #transfer_response = requests.post("http://thingiverse-production-new.s3.amazonaws.com",
+    #                                    data=mp_encoder,
+    #                                    headers={'Content-Type': mp_encoder.content_type})
 
+    files = {'file': open(threedfilepaths[0], 'rb')}
     params = upload_creds["fields"]
-   #params["Content-Disposition"] = "multipart/form-data"
-    transfer_response = requests.post("http://thingiverse-production-new.s3.amazonaws.com",
-                                        data=mp_encoder,
-                                        headers={'Content-Type': mp_encoder.content_type})
 
+    transfer_response = requests.post("http://thingiverse-production-new.s3.amazonaws.com",
+                                        files=files, data=params)
+
+    #print(requests.Request('POST', 'http://thingiverse-production-new.s3.amazonaws.com', files=files).prepare().body.decode('ascii'))
+
+    #print('{}\n{}\r\n{}\r\n\r\n{}'.format(
+    #    '-----------START-----------',
+    #    transfer_response.request.method + ' ' + transfer_response.request.url,
+    #    '\r\n'.join('{}: {}'.format(k, v) for k, v in transfer_response.request.headers.items()),
+    #    transfer_response.request.body,
+    #))
+
+    print("----Sanswer-----")
     print(transfer_response.text)
     print()
     pass
 
     # close transfer
-    #print("Closing transfer")
-    #finalize_response = json.loads(
-    #                        requests.post("http://api.thingiverse.com/things/"
-    #                                + str(thingdata["id"])
-    #                                + "/finalize",
-    #                                headers=headers).text)
-    #print(json.dumps(finalize_response, indent=4))
-    #print()
+    print("Closing transfer")
+    finalize_response = json.loads(
+                            requests.post("http://api.thingiverse.com/files/"
+                                    + str("33009569")
+                                    + "/finalize",
+                                    headers=headers).text)
+    print(json.dumps(finalize_response, indent=4))
+    print()
 
     
 def main():
