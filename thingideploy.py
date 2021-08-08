@@ -5,7 +5,7 @@ import os
 import requests
 import webbrowser
 import time
-import datetime
+from datetime import datetime, timezone
 
 from rauth import OAuth2Service
 
@@ -33,6 +33,7 @@ def create_initial_folder_structure(project_path):
     """Create the initial project structure at the target location"""
     print("Creating initial project structure is not implemented yet")
 
+
 def deploy_files(access_path, files, thingdata, headers):
     ########## File checks
 
@@ -44,20 +45,48 @@ def deploy_files(access_path, files, thingdata, headers):
     # check for upload vs patch
     files_to_upload = []
     files_to_patch  = []
+    files_to_delete = []
     for localfile in files:
         upload_required = True
         for remotefile in existing_files:
-            # if a matching file is found on remote, append it onto patch list
-            # this will include id etc.
+            # If a matching file is found on remote, append it onto patch list.
+            # This will include id etc.
             if remotefile["name"] == localfile["name"]:
                 upload_required = False
-                files_to_patch.append(remotefile)
+
+                # Only check timestamps for file types, not images
+                if access_path == "/files":
+                    # The timestamp from strptime is naive and assumes my
+                    # timezone, which I need to strip in a second step
+                    naive_upload_timestamp = datetime.strptime(
+                                                remotefile["date"],
+                                                "%Y-%m-%d %H:%M:%S")
+
+                    upload_timestamp =  datetime.timestamp(
+                                          naive_upload_timestamp.replace(
+                                              tzinfo=timezone.utc))
+
+                    print("Checking timestamps for existing file:")
+                    print(remotefile["name"])
+                    if localfile["date"] > upload_timestamp:
+                        print("Replacing file")
+                        files_to_patch.append(remotefile)
+                        files_to_delete.append(remotefile)
+                        files_to_upload.append(localfile)
+                    else:
+                        print("Keeping uploaded version")
+
+                elif access_path == "/images":
+                    print("Replacing existing image: " + localfile["name"])
+                    files_to_patch.append(remotefile)
+                    files_to_delete.append(remotefile)
+                    files_to_upload.append(localfile)
+                print()
                 break
         if upload_required:
             files_to_upload.append(localfile)
 
     # check for files to delete
-    files_to_delete = []
     for remotefile in existing_files:
         deletion_required = True
         for localfile in files:
@@ -73,14 +102,11 @@ def deploy_files(access_path, files, thingdata, headers):
     for file in files_to_upload:
         print(file["name"])
 
-    print("Files to be patched:")
-    for file in files_to_patch:
-        print(file["name"])
-
     print("Files to be deleted:")
     for file in files_to_delete:
         print(file["name"])
 
+    print()
 
 ########## File deletions
 
@@ -115,24 +141,23 @@ def deploy_files(access_path, files, thingdata, headers):
         print(json.dumps(upload_creds, indent=4))
         print()
 
-
         # actually transfer
         print("Starting transfer")
 
         files = {'file': open(file["path"], 'rb')}
         params = upload_creds["fields"]
 
-        transfer_response = requests.post(
-                            "http://thingiverse-production-new.s3.amazonaws.com",
-                            files=files, data=params, 
-                            allow_redirects=False).text
+        requests.post(
+            "http://thingiverse-production-new.s3.amazonaws.com",
+            files=files, data=params, 
+            allow_redirects=False).text
 
         # close transfer
         print("Closing transfer")
         finalize_response = json.loads(
-                            requests.post(
-                                upload_creds["fields"]["success_action_redirect"],
-                                headers=headers).text)
+                             requests.post(
+                              upload_creds["fields"]["success_action_redirect"],
+                              headers=headers).text)
 
         print(json.dumps(finalize_response, indent=4))
         print()
@@ -157,9 +182,9 @@ def deploy_project(project_path, api_token):
     datapath = project_path + "/thingdata.json"
     with open(datapath, "r", encoding="utf-8") as f:
         thingdata = json.load(f)
-        print("Thingdata: ")
-        print(thingdata)
-        print()
+        #print("Thingdata: ")
+        #print(thingdata)
+        #print()
 
         # check if thing already exists, if id is provided
         if thingdata["id"] != "":
@@ -187,8 +212,10 @@ def deploy_project(project_path, api_token):
         print(desc)
         print()
 
-    # 3D files
+    # model / source files
     threedpath      = project_path + "/3d"
+    sourcepath      = project_path + "/source"
+    gcodepath       = project_path + "/gcode"
     threedfiles     = []
     for file in os.listdir(threedpath):
         if (file.endswith(".stl")  or
@@ -197,8 +224,27 @@ def deploy_project(project_path, api_token):
             file.endswith(".STEP") or
             file.endswith(".3mf")):
             threedfiles.append({"name":file, 
-                                "path":os.path.join(threedpath, file)})
-    print("Found 3D files: ")
+                                "path":os.path.join(threedpath, file),
+                                "date":os.path.getmtime(
+                                    os.path.join(threedpath, file))})
+
+    for file in os.listdir(sourcepath):
+        if (file.endswith(".FCStd")  or
+            file.endswith(".scad")  or
+            file.endswith(".f3d")):
+            threedfiles.append({"name":file, 
+                                "path":os.path.join(sourcepath, file),
+                                "date":os.path.getmtime(
+                                    os.path.join(sourcepath, file))})
+
+    for file in os.listdir(gcodepath):
+        if file.endswith(".gcode"):
+            threedfiles.append({"name":file, 
+                                "path":os.path.join(gcodepath, file),
+                                "date":os.path.getmtime(
+                                    os.path.join(gcodepath, file))})
+
+    print("Found model files: ")
     for file in threedfiles:
         print(file["name"])
     print()
@@ -237,7 +283,7 @@ def deploy_project(project_path, api_token):
     
 ########## Thing creation
     # If ID wasn't already found, first create thing
-    if mode == "nevercreate":
+    if mode == "create":
 
         print("Creating thing")
 
@@ -273,7 +319,7 @@ def deploy_project(project_path, api_token):
 
 ########## Thing info patching  
     # Otherwise, go into patching mode
-    elif mode == "neverpatch":
+    elif mode == "patch":
         
         print("Patching thing")
 
@@ -291,7 +337,7 @@ def deploy_project(project_path, api_token):
                                     data=json.dumps(params))
 
         # wait a tick before pulling an answer
-        # since Thingiverse does not populate answers instantly
+        # since Thingiverse does not populate all answers instantly
         print("Waiting for Thingiverse to refresh tags in response")
         time.sleep(2) 
 
@@ -299,7 +345,7 @@ def deploy_project(project_path, api_token):
                                     + str(thingdata["id"])
                                     + "/", headers=headers).text)
 
-        # Output response to file for debugging, loads and dumps formats document
+        # Output response to file for debugging, loads/dumps formats document
         with open(project_path + "/PatchResponse.json", "w") as f:
                 f.write(json.dumps(patch, indent=4))
 
@@ -307,11 +353,11 @@ def deploy_project(project_path, api_token):
         if patch["id"] == thingdata["id"]:
             print("Thing patching succesful")
     
-
+    print("Deploying model files:")
     deploy_files("/files", threedfiles, thingdata, headers)
 
+    print("Deploying images:")
     deploy_files("/images", imgfiles, thingdata, headers)
-
 
 
 def main():
