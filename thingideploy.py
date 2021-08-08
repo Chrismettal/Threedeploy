@@ -12,15 +12,15 @@ def request_token(client_id):
 
     # paste in some stuff and hope it werks, getting a new authorized token or something
     #Authservice = OAuth2Service(
-    #    name='thingiverse',
+    #    name="thingiverse",
     #    client_id=client_id,
     #    client_secret=client_secret,
-    #    access_token_url='https://www.thingiverse.com/login/oauth/access_token',
-    #    authorize_url='https://www.thingiverse.com/login/oauth/authorize',
-    #    base_url='https://api.thingiverse.com')
+    #    access_token_url="https://www.thingiverse.com/login/oauth/access_token",
+    #    authorize_url="https://www.thingiverse.com/login/oauth/authorize",
+    #    base_url="https://api.thingiverse.com")
     ## let's get the url to go to
-    #authparams = {'redirect_uri': 'https://www.thingiverse.com',
-    #              'response_type': 'token'}
+    #authparams = {"redirect_uri": "https://www.thingiverse.com",
+    #              "response_type": "token"}
     #url = Authservice.get_authorize_url(**authparams)
     #webbrowser.open_new(url)
     #access_code = raw_input("access token: >")
@@ -39,7 +39,7 @@ def deploy_project(project_path, api_token):
     ##                              Init                                    ##
     ##########################################################################
 
-    headers = {'Authorization': 'Bearer ' + api_token}
+    headers = {"Authorization": "Bearer " + api_token}
 
     ##########################################################################
     ##                          File parsing                                ##
@@ -54,11 +54,11 @@ def deploy_project(project_path, api_token):
         print()
 
         # check if thing already exists, if thingid is provided
-        if thingdata['thingid'] != '':
+        if thingdata["thingid"] != "":
             mode = "patch"
             thing = json.loads(
-                        requests.get('http://api.thingiverse.com/things/' 
-                                    + str(thingdata['thingid']), 
+                        requests.get("http://api.thingiverse.com/things/" 
+                                    + str(thingdata["thingid"]), 
                                     headers=headers).text)
             if thing["id"] == thingdata["thingid"]:
                 print("Thing already exists, running in patch mode")
@@ -68,7 +68,7 @@ def deploy_project(project_path, api_token):
                 exit()
         else:
             mode = "create"
-            print('Thing does not exist yet, running in creation mode')
+            print("Thing does not exist yet, running in creation mode")
         print()
 
     # Description
@@ -144,7 +144,7 @@ def deploy_project(project_path, api_token):
         new_thing_id = thing["id"]
 
         # check if valid answer received
-        if new_thing_id != '':
+        if new_thing_id != "":
             print("Thing creation succesful, thing ID:")
             print(new_thing_id)
         
@@ -160,7 +160,7 @@ def deploy_project(project_path, api_token):
 ########## Thing info patching    
 
     params = {"is_wip": thingdata["is_wip"]}
-    patch = json.loads(requests.patch('http://api.thingiverse.com/things/'
+    patch = json.loads(requests.patch("http://api.thingiverse.com/things/"
                                 + str(thingdata["thingid"])
                                 + "/", headers=headers,
                                 data=json.dumps(params)).text)
@@ -184,29 +184,29 @@ def main():
 
 
     parser = argparse.ArgumentParser(description=
-                     'Upload 3D printing project to Thingiverse automatically')
+                     "Upload 3D printing project to Thingiverse automatically")
     # required path
-    parser.add_argument('path', metavar='path', type=str,
-                        help='Path to project structure')
+    parser.add_argument("path", metavar="path", type=str,
+                        help="Path to project structure")
     # optional flag to create project structure at path
-    parser.add_argument('--create-project',
+    parser.add_argument("--create-project",
                          action="store_true",
-                        help='Create project structure if set')
+                        help="Create project structure if set")
     # optional clientid input whith which a token is requested
-    parser.add_argument('--request-token', metavar='clientid', type=str, 
-                        help='If set creates token with supplied client ID')
+    parser.add_argument("--request-token", metavar="clientid", type=str, 
+                        help="If set creates token with supplied client ID")
     # hopefully not needed anymore
-    #parser.add_argument('secret', metavar='secret', type=str, 
-    #                    help='Thingiverse client secret')
+    #parser.add_argument("secret", metavar="secret", type=str, 
+    #                    help="Thingiverse client secret")
     # optional token which
-    parser.add_argument('--deploy-project', metavar='apitoken', type=str, 
-                        help='API token generated by using --create-token')
+    parser.add_argument("--deploy-project", metavar="apitoken", type=str, 
+                        help="API token generated by using --create-token")
     args = parser.parse_args()
 
 
     # generate error if no path provided 
     if not os.path.isdir(args.path):
-        print('The path specified does not exist')
+        print("The path specified does not exist")
         exit()
 
     project_path    = args.path
@@ -229,5 +229,5 @@ def main():
 ##########################################################################
 ##                        main() idiom                                  ##
 ##########################################################################
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
