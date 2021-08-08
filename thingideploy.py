@@ -5,6 +5,8 @@ import os
 import requests
 import webbrowser
 import time
+from requests_toolbelt.multipart.encoder import MultipartEncoder
+
 from rauth import OAuth2Service
 
 def request_token(client_id):
@@ -81,39 +83,45 @@ def deploy_project(project_path, api_token):
         print()
 
     # 3D files
-    threedpath = project_path + "/3d"
-    threedfiles = []
+    threedpath      = project_path + "/3d"
+    threedfiles     = []
+    threedfilepaths = []
     for file in os.listdir(threedpath):
         if (file.endswith(".stl")  or
             file.endswith(".obj")  or
             file.endswith(".stp")  or
             file.endswith(".STEP") or
             file.endswith(".3mf")):
-            threedfiles.append(os.path.join(threedpath, file))
+            threedfilepaths.append(os.path.join(threedpath, file))
+            threedfiles.append(file)
     print("Found 3D files: ")
     for file in threedfiles:
         print(file)
     print()
 
     # Gcodes
-    gcodepath = project_path + "/gcode"
-    gcodefiles = []
+    gcodepath       = project_path + "/gcode"
+    gcodefiles      = []
+    gcodefilepaths  = []
     for file in os.listdir(gcodepath):
         if (file.endswith(".gcode")):
-            gcodefiles.append(os.path.join(gcodepath, file))
+            gcodefilepaths.append(os.path.join(gcodepath, file))
+            gcodefiles.append(file)
     print("Found gcode files: ")
     for file in gcodefiles:
         print(file)
     print()
 
     # Images
-    imgpath = project_path + "/img"
-    imgfiles = []
+    imgpath         = project_path + "/img"
+    imgfiles        = []
+    imgfilepaths    = []
     for file in os.listdir(imgpath):
         if (file.endswith(".png") or
             file.endswith(".jpg") or
             file.endswith(".bmp")):
-            imgfiles.append(os.path.join(imgpath, file))
+            imgfilepaths.append(os.path.join(imgpath, file))
+            imgfiles.append(file)
     print("Found image files: ")
     for file in imgfiles:
         print(file)
@@ -162,7 +170,7 @@ def deploy_project(project_path, api_token):
 
 ########## Thing info patching  
     # Otherwise, go into patching mode
-    elif mode == "patch":
+    elif mode == "neverpatch":
         
         print("Patching thing")
 
@@ -181,7 +189,7 @@ def deploy_project(project_path, api_token):
 
         # wait a tick before pulling an answer
         # since Thingiverse does not populate answers instantly
-        print("waiting on Thingiverse")
+        print("Waiting for Thingiverse to refresh tags in response")
         time.sleep(2) 
 
         patch = json.loads(requests.get("http://api.thingiverse.com/things/"
@@ -202,9 +210,63 @@ def deploy_project(project_path, api_token):
 
 ########## File uploads
 
+    print("Starting uploads")
+
+    # open up transfer
+    print("Opening transfer")
+    params = {"filename":threedfiles[1]}
+    upload_creds = json.loads(
+                    requests.post("http://api.thingiverse.com/things/"
+                                    + str(thingdata["id"])
+                                    + "/files",
+                                    data=json.dumps(params),
+                                    headers=headers).text)
+    print(json.dumps(upload_creds, indent=4))
+    print()
+
+    # actually transfer
+    print("Starting transfer")
+    file = {'file': open(threedfilepaths[1], 'rb')}
+
+
+    # pls don't look at this, i'm desperate
+    mp_encoder = MultipartEncoder(
+        fields={
+            "AWSAccessKeyId":upload_creds["fields"]["AWSAccessKeyId"],
+            "bucket":upload_creds["fields"]["bucket"],
+            "key":upload_creds["fields"]["key"],
+            "acl":upload_creds["fields"]["acl"],
+            "policy":upload_creds["fields"]["policy"],
+            "signature":upload_creds["fields"]["signature"],
+            "success_action_redirect":upload_creds["fields"]["success_action_redirect"],
+            "Content-Type":upload_creds["fields"]["Content-Type"],
+            "Content-Disposition":upload_creds["fields"]["Content-Disposition"],
+            "file":("filename", open(threedfilepaths[1], "rb"), "binary")
+        }
+    )
+
+
+    params = upload_creds["fields"]
+   #params["Content-Disposition"] = "multipart/form-data"
+    transfer_response = requests.post("http://thingiverse-production-new.s3.amazonaws.com",
+                                        data=mp_encoder,
+                                        headers={'Content-Type': mp_encoder.content_type})
+
+    print(transfer_response.text)
+    print()
     pass
 
+    # close transfer
+    #print("Closing transfer")
+    #finalize_response = json.loads(
+    #                        requests.post("http://api.thingiverse.com/things/"
+    #                                + str(thingdata["id"])
+    #                                + "/finalize",
+    #                                headers=headers).text)
+    #print(json.dumps(finalize_response, indent=4))
+    #print()
 
+    
 def main():
     ##########################################################################
     ##                              Intro                                   ##
