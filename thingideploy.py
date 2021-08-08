@@ -5,7 +5,6 @@ import os
 import requests
 import webbrowser
 import time
-from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from rauth import OAuth2Service
 
@@ -228,53 +227,21 @@ def deploy_project(project_path, api_token):
     print("Starting transfer")
     
 
-#---------------MultipartEncoder version
-    # pls don't look at this, i'm desperate
-    #mp_encoder = MultipartEncoder(
-    #    fields={
-    #        "AWSAccessKeyId":upload_creds["fields"]["AWSAccessKeyId"],
-    #        "bucket":upload_creds["fields"]["bucket"],
-    #        "key":upload_creds["fields"]["key"],
-    #        "acl":upload_creds["fields"]["acl"],
-    #        "policy":upload_creds["fields"]["policy"],
-    #        "signature":upload_creds["fields"]["signature"],
-    #        "success_action_redirect":upload_creds["fields"]["success_action_redirect"],
-    #        "Content-Type":upload_creds["fields"]["Content-Type"],
-    #        "Content-Disposition":upload_creds["fields"]["Content-Disposition"],
-    #        "file":(threedfiles[1], open(threedfilepaths[1], "rb"), "text/plain")
-    #    }
-    #)
-
-    #transfer_response = requests.post("http://thingiverse-production-new.s3.amazonaws.com",
-    #                                    data=mp_encoder,
-    #                                    headers={'Content-Type': mp_encoder.content_type})
-
     files = {'file': open(threedfilepaths[0], 'rb')}
     params = upload_creds["fields"]
 
     transfer_response = requests.post("http://thingiverse-production-new.s3.amazonaws.com",
-                                        files=files, data=params)
+                                        files=files, data=params, allow_redirects=False)
 
-    #print(requests.Request('POST', 'http://thingiverse-production-new.s3.amazonaws.com', files=files).prepare().body.decode('ascii'))
-
-    #print('{}\n{}\r\n{}\r\n\r\n{}'.format(
-    #    '-----------START-----------',
-    #    transfer_response.request.method + ' ' + transfer_response.request.url,
-    #    '\r\n'.join('{}: {}'.format(k, v) for k, v in transfer_response.request.headers.items()),
-    #    transfer_response.request.body,
-    #))
-
-    print("----Sanswer-----")
-    print(transfer_response.text)
+    print(transfer_response.reason)
+    print(transfer_response.next.path_url)
     print()
     pass
 
     # close transfer
     print("Closing transfer")
     finalize_response = json.loads(
-                            requests.post("http://api.thingiverse.com/files/"
-                                    + str("33009569")
-                                    + "/finalize",
+                            requests.post(upload_creds["fields"]["success_action_redirect"],
                                     headers=headers).text)
     print(json.dumps(finalize_response, indent=4))
     print()
