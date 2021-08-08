@@ -55,33 +55,33 @@ def main():
     descpath = projectpath + "/README.md"
     with open(descpath, "r", encoding="utf-8") as f:
         desc = f.read()
-        print("Description: ")
-        print(desc)
-        print()
+        #print("Description: ")
+        #print(desc)
+        #print()
 
     # Tags
     tagpath = projectpath + "/tags.md"
     with open(tagpath, "r", encoding="utf-8") as f:
         tags = f.read()
-        print("Tags: ")
-        print(tags)
-        print()
+        #print("Tags: ")
+        #print(tags)
+        #print()
 
     # Flags
     flagpath = projectpath + "/flags.json"
     with open(flagpath, "r", encoding="utf-8") as f:
         flags = json.load(f)
-        print("Flags: ")
-        print(flags)
-        print()
+        #print("Flags: ")
+        #print(flags)
+        #print()
 
         # check if thing already exists, if thingid is provided
         if flags['thingid'] != '':
             mode = "patch"
             thing = json.loads(requests.get('http://api.thingiverse.com/things/' + str(flags['thingid']), headers=headers).text)
-            if thing["name"] == flags["thingid"]:
+            if thing["id"] == flags["thingid"]:
                 print("Thing already exists, running in patch mode")
-            elif thing["name"] == "":
+            else:
                 print("Thing ID specified in flags.json but thing doesn't exist or name doesn't match, aborting")
                 exit()
         else:
@@ -100,10 +100,10 @@ def main():
             file.endswith(".3mf")):
             threedfiles.append(os.path.join(threedpath, file))
 
-    print("Found 3D files: ")
-    for file in threedfiles:
-        print(file)
-    print()
+    #print("Found 3D files: ")
+    #for file in threedfiles:
+    #    print(file)
+    #print()
 
     # Gcodes
     gcodepath = projectpath + "/gcode"
@@ -112,10 +112,10 @@ def main():
         if (file.endswith(".gcode")):
             gcodefiles.append(os.path.join(gcodepath, file))
 
-    print("Found gcode files: ")
-    for file in gcodefiles:
-        print(file)
-    print()
+    #print("Found gcode files: ")
+    #for file in gcodefiles:
+    #    print(file)
+    #print()
 
     # Images
     imgpath = projectpath + "/img"
@@ -126,10 +126,10 @@ def main():
             file.endswith(".bmp")):
             imgfiles.append(os.path.join(imgpath, file))
 
-    print("Found image files: ")
-    for file in imgfiles:
-        print(file)
-    print()
+    #print("Found image files: ")
+    #for file in imgfiles:
+    #    print(file)
+    #print()
 
 
     ##########################################################################
@@ -159,13 +159,13 @@ def main():
 
         # initial file creation
         params = {'name': flags["thingname"], 'license': flags["license"], 'category': flags["category"]}
-        thing = json.loads(requests.post('http://api.thingiverse.com/things/', headers=headers, data=json.dumps(params)))
+        thing = json.loads(requests.post('http://api.thingiverse.com/things/', headers=headers, data=json.dumps(params)).text)
         NewThingId = thing["id"]
         if NewThingId != '':
             print("Thing created succesful, Thing ID:")
             print(NewThingId)
         
-        # Update ThingID with newly created ID
+        # Update flags document with newly created ID
         flags["thingid"] = NewThingId
         with open(flagpath, "w", encoding="utf-8") as f:
             f.write(json.dumps(flags))
@@ -176,10 +176,14 @@ def main():
 
     # Uploads need to be done the same, no matter if creating or patching mode is active
     
-    params = {'description': 'desc'}
+    params = {"is_wip": True, "description": "I made this on the web"}
     response = requests.patch('http://api.thingiverse.com/things/' + str(flags["thingid"]) + "/", headers=headers, data=json.dumps(params))
+    print(json.dumps(params))
     print(response.text)
-
+    
+    #print("Asking: " + 'http://api.thingiverse.com/things/' + str(flags["thingid"]) + "/")
+    #response = requests.get('http://api.thingiverse.com/things/' + str(flags["thingid"]) + "/", headers=headers)
+    #print(response.text)
 
 ##########################################################################
 ##                        main() idiom                                  ##
