@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import argparse
 import json
+import sys
 import os
 import requests
 import webbrowser
@@ -215,7 +216,7 @@ def deploy_project(project_path, api_token):
             else:
                 print("""Thing ID specified in flags.json does not belong to 
                          creator, exiting""")
-                exit()
+                sys.exit(os.EX_NOPERM)
 
         else:
             mode = "create"
@@ -276,6 +277,7 @@ def deploy_project(project_path, api_token):
             file.endswith(".bmp")):
             imgfiles.append({"name":file, 
                              "path":os.path.join(imgpath, file)})
+
     print("Found image files: ")
     for file in imgfiles:
         print(file["name"])
@@ -297,7 +299,7 @@ def deploy_project(project_path, api_token):
                   "license":        thingdata["license"],
                   "category":       thingdata["category"],
                   "description":    description,
-                 #"instructions":   "None provided",
+                  "instructions":   "None provided",
                   "is_wip":         thingdata["is_wip"],
                   "tags":           thingdata["tags"]}
         thing = json.loads(
@@ -333,9 +335,10 @@ def deploy_project(project_path, api_token):
                   "license":        thingdata["license"],
                   "category":       thingdata["category"],
                   "description":    description,
+                  "instructions":   "None provided",
                   "is_wip":         thingdata["is_wip"],
                   "tags":           thingdata["tags"]}
-        requests.patch("http://api.thingiverse.com/things/"
+        patch = requests.patch("http://api.thingiverse.com/things/"
                                     + str(thingdata["id"])
                                     + "/", headers=headers,
                                     data=json.dumps(params))
@@ -409,7 +412,7 @@ def main():
     # generate error if no path provided 
     if not os.path.isdir(args.path):
         print("The path specified does not exist, exiting")
-        exit()
+        sys.exit(os.EX_USAGE)
 
     project_path    = args.path
     client_id       = str(args.request_token)
@@ -427,6 +430,10 @@ def main():
         deploy_project(project_path, api_token)
     else:
         print("No mode chosen (create / patch), exiting")
+        sys.exit(os.EX_USAGE)
+
+    # exit with exit code 0
+    sys.exit(os.EX_OK)
 
 ##########################################################################
 ##                        main() idiom                                  ##
