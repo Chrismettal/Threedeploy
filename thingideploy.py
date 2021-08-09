@@ -34,7 +34,7 @@ def create_initial_folder_structure(project_path):
     print("Creating initial project structure is not implemented yet")
 
 
-def deploy_files(access_path, files, thingdata, headers):
+def deploy_files(access_path, files, whitelist, thingdata, headers):
     ########## File checks
 
     existing_files = json.loads(
@@ -46,6 +46,7 @@ def deploy_files(access_path, files, thingdata, headers):
     files_to_upload = []
     files_to_patch  = []
     files_to_delete = []
+
     for localfile in files:
         upload_required = True
         for remotefile in existing_files:
@@ -86,16 +87,30 @@ def deploy_files(access_path, files, thingdata, headers):
         if upload_required:
             files_to_upload.append(localfile)
 
+
     # check for files to delete
     for remotefile in existing_files:
         deletion_required = True
+
         for localfile in files:
-            # if a matching file is found locally, don't delete it
-            if remotefile["name"] == localfile["name"]:
+            # if a matching file is found locally, don't delete it.
+            if (remotefile["name"] == localfile["name"]):
                 deletion_required = False
                 break
+
+        if access_path == "/images":
+            for whitelistfile in whitelist:
+                # also keep auto generated images by thingiverse, which is 
+                # always "<NameOfExisting3dFile>.png", pulled from whitelist
+                if (remotefile["name"] == os.path.splitext(
+                                            whitelistfile["name"])[0] 
+                                            + ".png"):
+                    deletion_required = False
+                    break
+
         if deletion_required:
             files_to_delete.append(remotefile)
+
 
     # output upcoming file operations
     print("Files to be uploaded:")
@@ -108,7 +123,7 @@ def deploy_files(access_path, files, thingdata, headers):
 
     print()
 
-########## File deletions
+    ########## File deletions
 
     for file in files_to_delete:
 
@@ -124,7 +139,7 @@ def deploy_files(access_path, files, thingdata, headers):
 
         print(json.dumps(deletion_response, indent=4))
 
-########## File uploads
+    ########## File uploads
 
     for file in files_to_upload:
         print("Starting upload of " + file["name"])
@@ -188,42 +203,45 @@ def deploy_project(project_path, api_token):
 
         # check if thing already exists, if id is provided
         if thingdata["id"] != "":
-            mode = "patch"
             thing = json.loads(
                         requests.get("http://api.thingiverse.com/things/" 
                                     + str(thingdata["id"]), 
                                     headers=headers).text)
-            if thing["id"] == thingdata["id"]:
+
+            # compare provided name with found creator name as sanity check
+            if thingdata["creator"] == thing["creator"]["name"]:
+                mode = "patch"
                 print("Thing already exists, running in patch mode")
             else:
-                print("""Thing ID specified in flags.json but thing doesn't
-                         exist or name doesn't match, aborting""")
+                print("""Thing ID specified in flags.json does not belong to 
+                         creator, exiting""")
                 exit()
+
         else:
             mode = "create"
-            print("Thing does not exist yet, running in creation mode")
+            print("No thing ID provided, running in creation mode")
         print()
 
     # Description
     descpath = project_path + "/README.md"
     with open(descpath, "r", encoding="utf-8") as f:
-        desc = f.read()
-        print("Description: ")
-        print(desc)
-        print()
+        description = f.read()
+        print("--------------Description---------------")
+        print(description)
+        print("----------------------------------------")
 
     # model / source files
     threedpath      = project_path + "/3d"
     sourcepath      = project_path + "/source"
     gcodepath       = project_path + "/gcode"
-    threedfiles     = []
+    modelfiles      = []
     for file in os.listdir(threedpath):
         if (file.endswith(".stl")  or
             file.endswith(".obj")  or
             file.endswith(".stp")  or
             file.endswith(".STEP") or
             file.endswith(".3mf")):
-            threedfiles.append({"name":file, 
+            modelfiles.append({"name":file, 
                                 "path":os.path.join(threedpath, file),
                                 "date":os.path.getmtime(
                                     os.path.join(threedpath, file))})
@@ -232,35 +250,22 @@ def deploy_project(project_path, api_token):
         if (file.endswith(".FCStd")  or
             file.endswith(".scad")  or
             file.endswith(".f3d")):
-            threedfiles.append({"name":file, 
+            modelfiles.append({"name":file, 
                                 "path":os.path.join(sourcepath, file),
                                 "date":os.path.getmtime(
                                     os.path.join(sourcepath, file))})
 
     for file in os.listdir(gcodepath):
         if file.endswith(".gcode"):
-            threedfiles.append({"name":file, 
+            modelfiles.append({"name":file, 
                                 "path":os.path.join(gcodepath, file),
                                 "date":os.path.getmtime(
                                     os.path.join(gcodepath, file))})
 
     print("Found model files: ")
-    for file in threedfiles:
+    for file in modelfiles:
         print(file["name"])
     print()
-
-    # Gcodes
-    # gcodepath       = project_path + "/gcode"
-    # gcodefiles      = []
-    # gcodefilepaths  = []
-    # for file in os.listdir(gcodepath):
-    #     if (file.endswith(".gcode")):
-    #         gcodefilepaths.append(os.path.join(gcodepath, file))
-    #         gcodefiles.append(file)
-    # print("Found gcode files: ")
-    # for file in gcodefiles:
-    #     print(file)
-    # print()
 
     # Images
     imgpath         = project_path + "/img"
@@ -281,7 +286,7 @@ def deploy_project(project_path, api_token):
     ##                     Thingiverse deployment                           ##
     ##########################################################################
     
-########## Thing creation
+    ########## Thing creation
     # If ID wasn't already found, first create thing
     if mode == "create":
 
@@ -291,7 +296,7 @@ def deploy_project(project_path, api_token):
         params = {"name":           thingdata["name"],
                   "license":        thingdata["license"],
                   "category":       thingdata["category"],
-                 #"description":    "AutoDescription",
+                  "description":    description,
                  #"instructions":   "None provided",
                   "is_wip":         thingdata["is_wip"],
                   "tags":           thingdata["tags"]}
@@ -317,7 +322,7 @@ def deploy_project(project_path, api_token):
             f.write(json.dumps(thingdata, indent=4))
 
 
-########## Thing info patching  
+    ########## Thing info patching  
     # Otherwise, go into patching mode
     elif mode == "patch":
         
@@ -325,12 +330,11 @@ def deploy_project(project_path, api_token):
 
 
         params = {"name":           thingdata["name"],
-                 "license":        thingdata["license"],
-                 "category":       thingdata["category"],
-                #"description":    "AutoDescription",
-                #"instructions":   "None provided",
-                 "is_wip":         thingdata["is_wip"],
-                 "tags":           thingdata["tags"]}
+                  "license":        thingdata["license"],
+                  "category":       thingdata["category"],
+                  "description":    description,
+                  "is_wip":         thingdata["is_wip"],
+                  "tags":           thingdata["tags"]}
         requests.patch("http://api.thingiverse.com/things/"
                                     + str(thingdata["id"])
                                     + "/", headers=headers,
@@ -354,10 +358,10 @@ def deploy_project(project_path, api_token):
             print("Thing patching succesful")
     
     print("Deploying model files:")
-    deploy_files("/files", threedfiles, thingdata, headers)
+    deploy_files("/files", modelfiles, "whitelist", thingdata, headers)
 
     print("Deploying images:")
-    deploy_files("/images", imgfiles, thingdata, headers)
+    deploy_files("/images", imgfiles, modelfiles, thingdata, headers)
 
 
 def main():
@@ -378,20 +382,25 @@ def main():
 
     parser = argparse.ArgumentParser(description=
                      "Upload 3D printing project to Thingiverse automatically")
+
     # required path
     parser.add_argument("path", metavar="path", type=str,
                         help="Path to project structure")
+
     # optional flag to create project structure at path
     parser.add_argument("--create-project",
                          action="store_true",
                         help="Create project structure if set")
+
     # optional clientid input whith which a token is requested
     parser.add_argument("--request-token", metavar="clientid", type=str, 
                         help="If set creates token with supplied client ID")
+
     # hopefully not needed anymore
     #parser.add_argument("secret", metavar="secret", type=str, 
     #                    help="Thingiverse client secret")
-    # optional token which
+
+    # optional token which is used for actual write access
     parser.add_argument("--deploy-project", metavar="apitoken", type=str, 
                         help="API token generated by using --create-token")
     args = parser.parse_args()
@@ -399,7 +408,7 @@ def main():
 
     # generate error if no path provided 
     if not os.path.isdir(args.path):
-        print("The path specified does not exist")
+        print("The path specified does not exist, exiting")
         exit()
 
     project_path    = args.path
@@ -417,7 +426,7 @@ def main():
     elif args.deploy_project:
         deploy_project(project_path, api_token)
     else:
-        print("No mode chosen, exiting")
+        print("No mode chosen (create / patch), exiting")
 
 ##########################################################################
 ##                        main() idiom                                  ##
