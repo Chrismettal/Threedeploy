@@ -43,3 +43,6 @@ fp-info-cache
 
 # Markdown notes that are usually linked here
 Notebook.md
+
+# Python virtual environment
+.venv/
