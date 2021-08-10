@@ -14,7 +14,7 @@ Providing the correct project structure, Thingideploy will do the following:
 
 :construction: :construction: :construction:
 
-## WIP WARNING
+### WIP WARNING
 
 This project is early work in progress. While Thing creation and deploying works, automatic API token and project generation is not yet implemented. Logging and error handling is more of a suggestion right now. This is basically only released so I can use it already in other pipelines.
 
