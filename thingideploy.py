@@ -7,7 +7,6 @@ import requests
 import webbrowser
 import time
 from datetime import datetime, timezone
-
 from rauth import OAuth2Service
 
 def request_token(client_id):
@@ -138,7 +137,7 @@ def deploy_files(access_path, files, whitelist, thingdata, headers):
                                 + str(file["id"]),
                                 headers=headers).text)
 
-        print(json.dumps(deletion_response, indent=4))
+        #print(json.dumps(deletion_response, indent=4))
 
     ########## File uploads
 
@@ -154,8 +153,7 @@ def deploy_files(access_path, files, whitelist, thingdata, headers):
                                         + "/files",
                                         data=json.dumps(params),
                                         headers=headers).text)
-        print(json.dumps(upload_creds, indent=4))
-        print()
+        #print(json.dumps(upload_creds, indent=4))
 
         # actually transfer
         print("Starting transfer")
@@ -174,9 +172,6 @@ def deploy_files(access_path, files, whitelist, thingdata, headers):
                              requests.post(
                               upload_creds["fields"]["success_action_redirect"],
                               headers=headers).text)
-
-        print(json.dumps(finalize_response, indent=4))
-        print()
 
 
 def deploy_project(project_path, api_token):
