@@ -274,7 +274,8 @@ def create_initial_folder_structure(project_path):
     "PatchResponse.json\n"
     "*.backup_*\n"
     "InitialCreation\n"
-    "ThingURL.txt"
+    "ThingURL.txt\n"
+    "ApiToken.txt\n"
     )
 
     # Create initial thingdata.json
