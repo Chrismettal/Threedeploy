@@ -16,13 +16,18 @@ Please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingid
 
 ![ExampleScreenshot](img/Example.png)
 
+
+If you like my work please consider supporting my caffeine addiction!
+
+<a href='https://ko-fi.com/U7U6G0X3' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://az743702.vo.msecnd.net/cdn/kofi4.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
 ---
 
 :construction: :construction: :construction:
 
-## WIP WARNING <!-- omit in toc -->
+### WIP WARNING <!-- omit in toc -->
 
-This project is early work in progress. While Thing creation and deploying works, automatic API token generation is not implemented yet. Logging and error handling is more of a suggestion right now. This is basically only released so I can use it already in other pipelines. Usage instructions are updated here as the project evolves.
+This is a WIP. While all functions except updating Thing descriptions work, there is little in the way of error handling or sanity checking of data.
 
 :construction: :construction: :construction:
 
@@ -42,10 +47,6 @@ This project is early work in progress. While Thing creation and deploying works
   - [Model files:](#model-files)
   - [Source files:](#source-files)
   - [Image files:](#image-files)
-
-If you like my work please consider supporting my caffeine addiction!
-
-<a href='https://ko-fi.com/U7U6G0X3' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://az743702.vo.msecnd.net/cdn/kofi4.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
 
 # Usage
@@ -84,6 +85,8 @@ Will open up your default webbrowser, promting you to login to Thingiverse and g
 After you have granted access, you will be forwarded to the Thingiverse homepage, but the response URL in your browsers address bar will contain your newly created API token. Copy this whole link and paste it into the command line when promted. Thingideploy will sanity check the link provided, and show you your API key for safekeeping. 
 
 The API key is NOT saved in the application in any form and is only shown shown now! Save the key in a safe location, and use it later in deployment mode with the argument `--deploy-project <YourApiToken`.
+
+*Warning*, Thingideploy is currently in Thingiverses submission queue. Until it is approved by Thingiverse, only 10 people can use my applications client ID to use Thingideploy! Should that happen before Thingiverse approved Thingideploy, I will add instructions on how to create your own Thingiverse application to generate your own client ID so you can request an API token.
 
 
 ## Deployment mode
