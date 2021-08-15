@@ -34,13 +34,24 @@ If you like my work please consider supporting my caffeine addiction!
 ## Usage
 
 
+### Requirements
+
+With Python 3 installed run:
+
+`pip install -R requirements.txt`
+
+To fetch all required modules.
+
+
 ### Project creation mode 
 
 ```bash
 ./thingideploy.py /path/to/new/project_folder --create-project
 ```
 
-Will create the [expected project structure](#expected-folder-structure) along with all required files at the given location, inside the `project_folder`.
+Will create the [expected project structure](#expected-folder-structure) along with all required files at the given location, inside the `project_folder`. 
+
+*Warning*, `project_folder` itself needs to exist before calling, as the other modes could break if it doesn't already.
 
 Every text file that already exists, will be backed up like `thingdata.json` --> `thingdata.json.backup_<Timestamp>` before the new file is generated fresh. These backup files are put in the `.gitignore` so make sure to not `git clean` them away when overwriting your files accidentaly.
 
@@ -75,11 +86,10 @@ Deploying your thing will:
 
 :construction: :construction: :construction:
 
-WIP, see [Example Repo](https://gitlab.com/chrismettal/LasS0) where this is already used!
+WIP, please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingideploy is used for automatic CI/CD deployment!
 
 :construction: :construction: :construction:
 
----
 
 ## Expected folder structure
 
@@ -106,6 +116,7 @@ Additionally, the script will sometimes create the following files:
   - `PatchResponse.json`      - Dump of the API response during project patching
   - `InitialCreation`         - Will get touched after initial creation, only to notify CI/CD pipelines to update `thingdata.json` with the newly received `thing_id`
 
+
 ## thingdata.json
 
 Example `thingdata.json`, providing Thing metadata:
@@ -126,7 +137,10 @@ Example `thingdata.json`, providing Thing metadata:
 }
 ```
 
----
+This file is required to exist before deployment, and is best generated with the `--create-project` option.
+
+`creator` is just used as a plausibility check before trying to patch a Thing that you don't own, so it needs to contain your Thingiverse name.All other options have direct impact on all Thing settings that are exposed to the API. Thing summary is supposed to be set via the projects `project_path/README.md` but currently does not work.
+
 
 ## Supported files
 
