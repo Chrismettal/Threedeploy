@@ -456,6 +456,7 @@ def deploy_project(project_path, api_token):
     # If ID wasn't already found, first create thing
     if mode == "create":
 
+        print()
         print("Creating thing")
 
         # initial file creation
@@ -487,11 +488,17 @@ def deploy_project(project_path, api_token):
         with open(datapath, "w", encoding="utf-8") as f:
             f.write(json.dumps(thingdata, indent=4))
 
+        # Output initial creation file for pipeline
+        with open(project_path + "/InitialCreation", "w") as f:
+            print("InitialCreation file generated")
+            f.write("Initial creation success")
+
 
     ########## Thing info patching  
     # Otherwise, go into patching mode
     elif mode == "patch":
         
+        print()
         print("Patching thing")
 
         params = {"name":           thingdata["name"],
@@ -522,10 +529,15 @@ def deploy_project(project_path, api_token):
         with open(project_path + "/PatchResponse.json", "w") as f:
                 f.write(json.dumps(thing, indent=4))
 
-        # check if valid answer received
+        # Check if valid answer received
         if thing["id"] == thingdata["id"]:
             print("Thing patching succesful")
     
+        # Remove InitialCreation file on repeat runs
+        if os.path.exists(project_path + "/InitialCreation"):
+            os.remove(project_path + "/InitialCreation")
+            print("InitialCreation file removed")
+
     # Model file upload
     print()
     print("Deploying model files:")
