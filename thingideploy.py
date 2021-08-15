@@ -6,6 +6,7 @@ import os
 import requests
 #import webbrowser
 import time
+import re
 from datetime import datetime, timezone
 from rauth import OAuth2Service
 from shutil import copyfile
@@ -28,12 +29,15 @@ def create_textfile(path, data):
 
 
 def deploy_files(access_path, files, whitelist, thingdata, headers):
+    """Deploys files to Thingiverse"""
+
     ########## File checks
 
     existing_files = json.loads(
                         requests.get("http://api.thingiverse.com/things/"
                             + str(thingdata["id"])
                             + access_path, headers=headers).text)
+
 
     # check for upload vs patch
     files_to_upload = []
@@ -167,6 +171,49 @@ def deploy_files(access_path, files, whitelist, thingdata, headers):
                               headers=headers).text)
 
 
+def set_image_order(imgfiles, thingdata, headers):
+    """Sets image order of recently uploaded pictures, based on filename"""
+
+    print("")
+    print("Ranking images based on file names")
+
+    existing_images = json.loads(
+                        requests.get("http://api.thingiverse.com/things/"
+                            + str(thingdata["id"])
+                            + "/images", headers=headers).text)
+
+    # Iterate through uploaded files
+    number_of_invalid_filenames = 0
+    for remote_image in existing_images:
+        # Assign rank to each file that has a valid name
+        if re.match("[0-9][0-9]-+", remote_image["name"]) is not None:
+            remote_image["rank"] = remote_image["name"][:2]
+            print("Found valid filename: " +
+                    remote_image["name"] + 
+                    ", Rank: ",
+                    remote_image["rank"])
+        # If no valid name is found, assign rank starting from 100
+        else:
+            remote_image["rank"] = 100 + number_of_invalid_filenames
+            number_of_invalid_filenames += 1
+
+            print("Not a valid filename for ranking: " + 
+                    remote_image["name"] + 
+                    ", Rank: ",
+                    remote_image["rank"])
+
+        # Actually patch image with new rank
+        params      = {"rank":remote_image["rank"]}
+        img_answer2 = requests.patch("http://api.thingiverse.com/things/" +
+                                    str(thingdata["id"]) +
+                                    "/images/"+
+                                    str(remote_image["id"]),
+                                    headers=headers,
+                                    data=json.dumps(params))
+
+        print("")
+        print("All images ranked")
+
 ##########################################################################
 ##                      Token generation mode                           ##
 ##########################################################################
@@ -261,7 +308,13 @@ def create_initial_folder_structure(project_path):
     create_textfile(path = project_path + "/img/README.md",
                     data =
     "# Image location\n\n"
-    "Put your images here\n"
+    "Put your images here\n\n"
+    "Image files are sorted (ranked) via the file name. "
+    "Make sure to use the following naming format:\n\n"
+    "`RR-YourImageName.*`\n\n"
+    "Where `RR` is a 2 char integer for image ranking, "
+    "for example `01-Cover.png` will put your that file "
+    "as the first image in order.\n"
     )
 
     create_textfile(path = project_path + "/source/README.md",
@@ -374,7 +427,8 @@ def deploy_project(project_path, api_token):
             file.endswith(".jpg") or
             file.endswith(".bmp")):
             imgfiles.append({"name":file, 
-                             "path":os.path.join(imgpath, file)})
+                             "path":os.path.join(imgpath, file),
+                             "id":0})
 
     print("Found image files: ")
     for file in imgfiles:
@@ -385,7 +439,6 @@ def deploy_project(project_path, api_token):
     ##########################################################################
     ##                     Thingiverse deployment                           ##
     ##########################################################################
-    
     ########## Thing creation
     # If ID wasn't already found, first create thing
     if mode == "create":
@@ -458,12 +511,15 @@ def deploy_project(project_path, api_token):
         if patch["id"] == thingdata["id"]:
             print("Thing patching succesful")
     
+
     print("Deploying model files:")
     deploy_files("/files", modelfiles, "whitelist", thingdata, headers)
 
     print("Deploying images:")
     deploy_files("/images", imgfiles, modelfiles, thingdata, headers)
+    set_image_order(imgfiles, thingdata, headers)
 
+    print("Deploying done!")
 
 ##########################################################################
 ##                             main()                                   ##

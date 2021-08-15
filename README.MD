@@ -2,6 +2,8 @@
 
 Python app to automatically deploy a project to Thingiverse. Can be used manually, but is really supposed to be used via GitLab CI/CD or Github Actions for example.
 
+![ExampleScreenshot](/img/Example.png)
+
 Providing the correct project structure, Thingideploy will do the following:
 - Read Thing metadata from `thingdata.json`
 - Create a Thing based on your provided data, or patch an existing one
@@ -75,12 +77,14 @@ Deploying your thing will:
 
 - Compare model / gcode and source files on Thingiverse with your local ones, deleting and reuploading the ones where your local timestamp is newer than the upload timestamp on Thingiverse
 - Delete and reupload all pictures, as there is no image timestamp to compare to
+- Set display order of your images base on the [filename](#image-files)
 - ~~Replace Thing summary with your README.md contents~~ / *CURRENTLY BROKEN IN API*
 - Replace all tags on Thingiverse with `thingdata.json`.`tags`
 - If `thingdata.json`.`is_published` is set, but thing is not already public, publish the Thing
 - Add `Work in progress` information, depending on `thingdata.json`.`is_wip`
 - Set `License` and `Category` depending on `thingdata.json`
 
+*Warning* Thingiverse is amazingly slow to react to new file uploads and metadata changes. After calling with `--deploy-project`, allow Thingiverse to catch up for around 15 minutes before checking your Thing.
 
 ### Pipeline usage
 
@@ -99,7 +103,7 @@ The program expects files in the following structure:
   - `gcode/`            - Location for sliced gcode files
     - `README.md`       - Describing your gcode location
   - `img/`              - Location for images
-    - `README.md`       - Describing your image location
+    - `README.md`       - Describing your image location, see also [image files](#image-files)
   - `source/`           - Location for project source file, FreeCAD, OpenSCAD project file etc.
     - `README.md`       - Describing your source file location
   - `3d/`               - Location for printable 3d files like stl, obj etc.
@@ -146,6 +150,7 @@ This file is required to exist before deployment, and is best generated with the
 
 Supported file extensions are practically arbitrary for Thingideploy and might later be read in from a seperate file rather than being hardcoded. Only there as a sanity check so you don't try uploading executables to Thingiverse.
 
+
 ### Model files:
 
 - .stl
@@ -155,14 +160,27 @@ Supported file extensions are practically arbitrary for Thingideploy and might l
 - .3mf
 - .gcode
 
+
 ### Source files:
 
 - .FCStd
 - .scad
 - .f3d
 
+
 ### Image files:
 
 - .png
 - .jpg
 - .bmp
+
+Image files are sorted (ranked) via the file name. Make sure to use the following naming format:
+
+`RR-YourImageName.*`
+
+Where `RR` is a 2 char integer for image ranking, for example `01-Cover.png` will put your that file as the first image in order. Make sure every image has a unique rank name, like:
+
+- `01-Cover.png`
+- `02-Side.png`
+- ...
+- `12-FinalPicture.png`
