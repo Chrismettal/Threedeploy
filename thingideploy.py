@@ -11,6 +11,9 @@ from rauth import OAuth2Service
 from shutil import copyfile
 
 
+##########################################################################
+##                            Helpers                                   ##
+##########################################################################
 def create_textfile(path, data):
     """Creates a new textfile, backing up already existing files if found"""
     # Backup file if it already exists
@@ -22,104 +25,6 @@ def create_textfile(path, data):
     # Create or overwrite original file
     with open(path, "w") as f:
                 f.write(data)
-
-
-def request_token(client_id):
-    """Take app client ID and generate an API token with write acces"""
-    print("Requesting token is not implemented yet")
-
-    # paste in some stuff and hope it werks, getting a new authorized token or something
-    #Authservice = OAuth2Service(
-    #    name="thingiverse",
-    #    client_id=client_id,
-    #    client_secret=client_secret,
-    #    access_token_url="https://www.thingiverse.com/login/oauth/access_token",
-    #    authorize_url="https://www.thingiverse.com/login/oauth/authorize",
-    #    base_url="https://api.thingiverse.com")
-    ## let's get the url to go to
-    #authparams = {"redirect_uri": "https://www.thingiverse.com",
-    #              "response_type": "token"}
-    #url = Authservice.get_authorize_url(**authparams)
-    #webbrowser.open_new(url)
-    #access_code = raw_input("access token: >")
-
-
-def create_initial_folder_structure(project_path):
-    """Create the initial project structure at the target location"""
-
-    print("Creating initial project structure at:")
-    print(project_path)
-
-    # Create overall project README
-    create_textfile(path = project_path + "/README.md",
-                    data =
-    "# Project Name\n\n"
-    "Summary of your project.\n\n"
-    "Published with [Thingideploy]"
-    "(https://gitlab.com/chrismettal/thingideploy)\n"
-    )
-
-    # Create .gitignore
-    create_textfile(path = project_path + "/.gitignore",
-                    data = 
-    "# Thingideploy specific\n"
-    "CreationResponse.json\n"
-    "PatchResponse.json\n"
-    "*.backup_*\n"
-    "InitialCreation\n"
-    )
-
-    # Create initial thingdata.json
-    thingdata = {
-                "id"            :"",
-                "name"          :"Project Name",
-                "creator"       :"YourThingiverseNameHere",
-                "is_wip"        :True,
-                "license"       :"gpl",
-                "category"      :"3D Printing",
-                "tags"          : [
-                                "YourTagsHere",
-                                "Thingideploy"
-                ],
-                "is_published"  :False
-    }
-    create_textfile(path = project_path + "/thingdata.json",
-                    data =json.dumps(thingdata, indent=4))
-
-    # Create folders
-    if not os.path.exists(project_path + "/3d"):
-        os.mkdir(project_path + "/3d")
-    if not os.path.exists(project_path + "/gcode"):
-        os.mkdir(project_path + "/gcode")
-    if not os.path.exists(project_path + "/img"):
-        os.mkdir(project_path + "/img")
-    if not os.path.exists(project_path + "/source"):
-        os.mkdir(project_path + "/source")
-
-    # Put readmes in folders for git tracking
-    create_textfile(path = project_path + "/3d/README.md",
-                    data =
-    "# 3D file location\n\n"
-    "Put your model files here, for example .stl, .STEP, .obj etc.\n"
-    )
-
-    create_textfile(path = project_path + "/gcode/README.md",
-                    data =
-    "# Gcode location\n\n"
-    "Put your sliced gcodes here\n"
-    )
-
-    create_textfile(path = project_path + "/img/README.md",
-                    data =
-    "# Image location\n\n"
-    "Put your images here\n"
-    )
-
-    create_textfile(path = project_path + "/source/README.md",
-                    data =
-    "# Source file location\n\n"
-    "Put your source files here, for example .FcStd, .scad etc.\n"
-    )
 
 
 def deploy_files(access_path, files, whitelist, thingdata, headers):
@@ -262,6 +167,113 @@ def deploy_files(access_path, files, whitelist, thingdata, headers):
                               headers=headers).text)
 
 
+##########################################################################
+##                      Token generation mode                           ##
+##########################################################################
+def request_token(client_id):
+    """Take app client ID and generate an API token with write acces"""
+    print("Requesting token is not implemented yet")
+
+    # paste in some stuff and hope it werks, getting a new authorized token or something
+    #Authservice = OAuth2Service(
+    #    name="thingiverse",
+    #    client_id=client_id,
+    #    client_secret=client_secret,
+    #    access_token_url="https://www.thingiverse.com/login/oauth/access_token",
+    #    authorize_url="https://www.thingiverse.com/login/oauth/authorize",
+    #    base_url="https://api.thingiverse.com")
+    ## let's get the url to go to
+    #authparams = {"redirect_uri": "https://www.thingiverse.com",
+    #              "response_type": "token"}
+    #url = Authservice.get_authorize_url(**authparams)
+    #webbrowser.open_new(url)
+    #access_code = raw_input("access token: >")
+
+
+##########################################################################
+##                  Initial project creation mode                       ##
+##########################################################################
+def create_initial_folder_structure(project_path):
+    """Create the initial project structure at the target location"""
+
+    print("Creating initial project structure at:")
+    print(project_path)
+
+    # Create overall project README
+    create_textfile(path = project_path + "/README.md",
+                    data =
+    "# Project Name\n\n"
+    "Summary of your project.\n\n"
+    "Published with [Thingideploy]"
+    "(https://gitlab.com/chrismettal/thingideploy)\n"
+    )
+
+    # Create .gitignore
+    create_textfile(path = project_path + "/.gitignore",
+                    data = 
+    "# Thingideploy specific\n"
+    "CreationResponse.json\n"
+    "PatchResponse.json\n"
+    "*.backup_*\n"
+    "InitialCreation\n"
+    )
+
+    # Create initial thingdata.json
+    thingdata = {
+                "id"            :"",
+                "name"          :"Project Name",
+                "creator"       :"YourThingiverseNameHere",
+                "is_wip"        :True,
+                "license"       :"gpl",
+                "category"      :"3D Printing",
+                "tags"          : [
+                                "YourTagsHere",
+                                "Thingideploy"
+                ],
+                "is_published"  :False
+    }
+    create_textfile(path = project_path + "/thingdata.json",
+                    data =json.dumps(thingdata, indent=4))
+
+    # Create folders
+    if not os.path.exists(project_path + "/3d"):
+        os.mkdir(project_path + "/3d")
+    if not os.path.exists(project_path + "/gcode"):
+        os.mkdir(project_path + "/gcode")
+    if not os.path.exists(project_path + "/img"):
+        os.mkdir(project_path + "/img")
+    if not os.path.exists(project_path + "/source"):
+        os.mkdir(project_path + "/source")
+
+    # Put readmes in folders for git tracking
+    create_textfile(path = project_path + "/3d/README.md",
+                    data =
+    "# 3D file location\n\n"
+    "Put your model files here, for example .stl, .STEP, .obj etc.\n"
+    )
+
+    create_textfile(path = project_path + "/gcode/README.md",
+                    data =
+    "# Gcode location\n\n"
+    "Put your sliced gcodes here\n"
+    )
+
+    create_textfile(path = project_path + "/img/README.md",
+                    data =
+    "# Image location\n\n"
+    "Put your images here\n"
+    )
+
+    create_textfile(path = project_path + "/source/README.md",
+                    data =
+    "# Source file location\n\n"
+    "Put your source files here, for example .FcStd, .scad etc.\n"
+    )
+
+
+##########################################################################
+##                     Project deployment mode                          ##
+##########################################################################
 def deploy_project(project_path, api_token):
     """Deploy the project using an API token generated by --request-token"""
 
@@ -450,6 +462,9 @@ def deploy_project(project_path, api_token):
     deploy_files("/images", imgfiles, modelfiles, thingdata, headers)
 
 
+##########################################################################
+##                             main()                                   ##
+##########################################################################
 def main():
     ##########################################################################
     ##                              Intro                                   ##
@@ -522,6 +537,7 @@ def main():
 
     # exit with exit code 0
     sys.exit(os.EX_OK)
+
 
 ##########################################################################
 ##                        main() idiom                                  ##
