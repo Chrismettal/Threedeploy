@@ -1,4 +1,4 @@
-![Logo](img/Logo.png)
+![Banner](img/Banner.png)
 
 Python app to automatically deploy a project to Thingiverse. Can be used manually, but is really supposed to be used via GitLab CI/CD or Github Actions for example.
 
