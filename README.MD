@@ -1,8 +1,6 @@
-# Thingideploy
+![Logo](img/Logo.png)
 
 Python app to automatically deploy a project to Thingiverse. Can be used manually, but is really supposed to be used via GitLab CI/CD or Github Actions for example.
-
-![ExampleScreenshot](/img/Example.png)
 
 Providing the correct project structure, Thingideploy will do the following:
 - Read Thing metadata from `thingdata.json`
@@ -16,11 +14,13 @@ Additionaly, there is a [project creation mode](#project-creation-mode) to creat
 
 Please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingideploy is used for automatic CI/CD deployment!
 
+![ExampleScreenshot](img/Example.png)
+
 ---
 
 :construction: :construction: :construction:
 
-### WIP WARNING
+## WIP WARNING <!-- omit in toc -->
 
 This project is early work in progress. While Thing creation and deploying works, automatic API token generation is not implemented yet. Logging and error handling is more of a suggestion right now. This is basically only released so I can use it already in other pipelines. Usage instructions are updated here as the project evolves.
 
@@ -28,15 +28,30 @@ This project is early work in progress. While Thing creation and deploying works
 
 ---
 
+# Table of contents <!-- omit in toc -->
+
+- [Usage](#usage)
+  - [Requirements](#requirements)
+  - [Project creation mode](#project-creation-mode)
+  - [API token request mode](#api-token-request-mode)
+  - [Deployment mode](#deployment-mode)
+  - [Pipeline usage](#pipeline-usage)
+- [Expected folder structure](#expected-folder-structure)
+- [thingdata.json](#thingdatajson)
+- [Supported files](#supported-files)
+  - [Model files:](#model-files)
+  - [Source files:](#source-files)
+  - [Image files:](#image-files)
+
 If you like my work please consider supporting my caffeine addiction!
 
 <a href='https://ko-fi.com/U7U6G0X3' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://az743702.vo.msecnd.net/cdn/kofi4.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
 
-## Usage
+# Usage
 
 
-### Requirements
+## Requirements
 
 With Python 3 installed run:
 
@@ -45,7 +60,7 @@ With Python 3 installed run:
 To fetch all required modules.
 
 
-### Project creation mode 
+## Project creation mode 
 
 ```bash
 ./thingideploy.py /path/to/new/project_folder --create-project
@@ -58,12 +73,12 @@ Will create the [expected project structure](#expected-folder-structure) along w
 Every text file that already exists, will be backed up like `thingdata.json` --> `thingdata.json.backup_<Timestamp>` before the new file is generated fresh. These backup files are put in the `.gitignore` so make sure to not `git clean` them away when overwriting your files accidentaly.
 
 
-### API token request mode
+## API token request mode
 
 Not yet implemented, will request access to your account, providing you with an API token to be used as an argument for later project deployment.
 
 
-### Deployment mode
+## Deployment mode
 
 ```bash
 thingideploy.py <PathToExpectedFolderStructure> --deploy-project=<YourApiToken> 
@@ -86,7 +101,7 @@ Deploying your thing will:
 
 *Warning* Thingiverse is amazingly slow to react to new file uploads and metadata changes. After calling with `--deploy-project`, allow Thingiverse to catch up for around 15 minutes before checking your Thing.
 
-### Pipeline usage
+## Pipeline usage
 
 :construction: :construction: :construction:
 
@@ -95,7 +110,7 @@ WIP, please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Th
 :construction: :construction: :construction:
 
 
-## Expected folder structure
+# Expected folder structure
 
 The program expects files in the following structure:
 
@@ -121,7 +136,7 @@ Additionally, the script will sometimes create the following files:
   - `InitialCreation`         - Will get touched after initial creation, only to notify CI/CD pipelines to update `thingdata.json` with the newly received `thing_id`
 
 
-## thingdata.json
+# thingdata.json
 
 Example `thingdata.json`, providing Thing metadata:
 
@@ -146,12 +161,12 @@ This file is required to exist before deployment, and is best generated with the
 `creator` is just used as a plausibility check before trying to patch a Thing that you don't own, so it needs to contain your Thingiverse name.All other options have direct impact on all Thing settings that are exposed to the API. Thing summary is supposed to be set via the projects `project_path/README.md` but currently does not work.
 
 
-## Supported files
+# Supported files
 
 Supported file extensions are practically arbitrary for Thingideploy and might later be read in from a seperate file rather than being hardcoded. Only there as a sanity check so you don't try uploading executables to Thingiverse.
 
 
-### Model files:
+## Model files:
 
 - .stl
 - .stp
@@ -161,14 +176,14 @@ Supported file extensions are practically arbitrary for Thingideploy and might l
 - .gcode
 
 
-### Source files:
+## Source files:
 
 - .FCStd
 - .scad
 - .f3d
 
 
-### Image files:
+## Image files:
 
 - .png
 - .jpg
