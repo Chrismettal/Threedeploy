@@ -79,7 +79,6 @@ def deploy_files(access_path, files, whitelist, thingdata, headers):
                     files_to_patch.append(remotefile)
                     files_to_delete.append(remotefile)
                     files_to_upload.append(localfile)
-                print()
                 break
         if upload_required:
             files_to_upload.append(localfile)
@@ -211,8 +210,8 @@ def set_image_order(imgfiles, thingdata, headers):
                                     headers=headers,
                                     data=json.dumps(params))
 
-        print("")
-        print("All images ranked")
+    print("")
+    print("All images ranked")
 
 ##########################################################################
 ##                      Token generation mode                           ##
@@ -520,7 +519,12 @@ def deploy_project(project_path, api_token):
     deploy_files("/images", imgfiles, modelfiles, thingdata, headers)
     set_image_order(imgfiles, thingdata, headers)
 
-    print("Deploying done!")
+    # Output thing URL to artifact and terminal
+    thing_url = "https://thingiverse.com/thing:" + str(thingdata["id"])
+    print("Deploying done! Thing URL: ")
+    print(thing_url)
+    with open(project_path + "/ThingURL.txt", "w") as f:
+        f.write(thing_url)
 
 ##########################################################################
 ##                             main()                                   ##
