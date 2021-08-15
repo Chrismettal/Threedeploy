@@ -214,6 +214,17 @@ def set_image_order(imgfiles, thingdata, headers):
     print("")
     print("All images ranked")
 
+
+def publish_project(thingdata, headers):
+    """Create publish request"""
+    # POST /things/{$id}/publish
+    PublishAnswer = requests.post("http://api.thingiverse.com/things/"+
+                                str(thingdata["id"])+
+                                "/publish",
+                                headers=headers)
+    
+    print("Thing published")
+
 ##########################################################################
 ##                      Token generation mode                           ##
 ##########################################################################
@@ -458,7 +469,7 @@ def deploy_project(project_path, api_token):
                         requests.post("http://api.thingiverse.com/things/",
                         headers=headers,
                         data=json.dumps(params)).text)
-        
+
         # Output response to file for debugging
         with open(project_path + "/CreationResponse.json", "w") as f:
             f.write(json.dumps(thing, indent=4))
@@ -482,7 +493,6 @@ def deploy_project(project_path, api_token):
         
         print("Patching thing")
 
-
         params = {"name":           thingdata["name"],
                   "license":        thingdata["license"],
                   "category":       thingdata["category"],
@@ -490,7 +500,8 @@ def deploy_project(project_path, api_token):
                  #"instructions":   "None provided",
                   "is_wip":         thingdata["is_wip"],
                   "tags":           thingdata["tags"]}
-        patch = requests.patch("http://api.thingiverse.com/things/"
+
+        requests.patch("http://api.thingiverse.com/things/"
                                     + str(thingdata["id"])
                                     + "/", headers=headers,
                                     data=json.dumps(params))
@@ -500,32 +511,53 @@ def deploy_project(project_path, api_token):
         print("Waiting for Thingiverse to refresh tags in response")
         time.sleep(2) 
 
-        patch = json.loads(requests.get("http://api.thingiverse.com/things/"
+        thing = json.loads(requests.get("http://api.thingiverse.com/things/"
                                     + str(thingdata["id"])
                                     + "/", headers=headers).text)
 
+        already_published = thing["is_published"]
+
         # Output response to file for debugging, loads/dumps formats document
         with open(project_path + "/PatchResponse.json", "w") as f:
-                f.write(json.dumps(patch, indent=4))
+                f.write(json.dumps(thing, indent=4))
 
         # check if valid answer received
-        if patch["id"] == thingdata["id"]:
+        if thing["id"] == thingdata["id"]:
             print("Thing patching succesful")
     
-
+    # Model file upload
+    print()
     print("Deploying model files:")
     deploy_files("/files", modelfiles, "whitelist", thingdata, headers)
 
+    # Image upload
+    print()
     print("Deploying images:")
     deploy_files("/images", imgfiles, modelfiles, thingdata, headers)
     set_image_order(imgfiles, thingdata, headers)
 
+    # Publishing
+    print()
+    print("Testing if publishing is required")
+    if thingdata["is_published"] and not thing["is_published"]:
+        print("Publishing thing")
+        publish_project(thingdata, headers)
+
+    elif not thingdata["is_published"]:
+        print("Publishing not requested")
+
+    elif thing["is_published"]:
+        print("Thing already published")
+
+
     # Output thing URL to artifact and terminal
     thing_url = "https://thingiverse.com/thing:" + str(thingdata["id"])
+    print()
     print("Deploying done! Thing URL: ")
     print(thing_url)
     with open(project_path + "/ThingURL.txt", "w") as f:
         f.write(thing_url)
+
 
 ##########################################################################
 ##                             main()                                   ##
