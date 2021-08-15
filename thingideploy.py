@@ -299,9 +299,6 @@ def deploy_project(project_path, api_token):
 
     with open(datapath, "r", encoding="utf-8") as f:
         thingdata = json.load(f)
-        #print("Thingdata: ")
-        #print(thingdata)
-        #print()
 
         # check if thing already exists, if id is provided
         if thingdata["id"] != "":
@@ -399,8 +396,8 @@ def deploy_project(project_path, api_token):
         params = {"name":           thingdata["name"],
                   "license":        thingdata["license"],
                   "category":       thingdata["category"],
-                  "description":    description,
-                  "instructions":   "None provided",
+                 #"description":    description,
+                 #"instructions":   "None provided",
                   "is_wip":         thingdata["is_wip"],
                   "tags":           thingdata["tags"]}
         thing = json.loads(
@@ -435,8 +432,8 @@ def deploy_project(project_path, api_token):
         params = {"name":           thingdata["name"],
                   "license":        thingdata["license"],
                   "category":       thingdata["category"],
-                  "description":    description,
-                  "instructions":   "None provided",
+                 #"description":    description,
+                 #"instructions":   "None provided",
                   "is_wip":         thingdata["is_wip"],
                   "tags":           thingdata["tags"]}
         patch = requests.patch("http://api.thingiverse.com/things/"
