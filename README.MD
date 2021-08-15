@@ -57,13 +57,13 @@ With Python 3 installed run:
 
 `pip install -R requirements.txt`
 
-To fetch all required modules.
+To fetch all required modules. 
 
 
 ## Project creation mode 
 
 ```bash
-./thingideploy.py /path/to/new/project_folder --create-project
+./thingideploy.py --create-project --path </path/to/new/project_folder>
 ```
 
 Will create the [expected project structure](#expected-folder-structure) along with all required files at the given location, inside the `project_folder`. 
@@ -75,13 +75,21 @@ Every text file that already exists, will be backed up like `thingdata.json` -->
 
 ## API token request mode
 
-Not yet implemented, will request access to your account, providing you with an API token to be used as an argument for later project deployment.
+```bash
+thingideploy.py --request-token
+```
+
+Will open up your default webbrowser, promting you to login to Thingiverse and grant access to Thingideploy. 
+
+After you have granted access, you will be forwarded to the Thingiverse homepage, but the response URL in your browsers address bar will contain your newly created API token. Copy this whole link and paste it into the command line when promted. Thingideploy will sanity check the link provided, and show you your API key for safekeeping. 
+
+The API key is NOT saved in the application in any form and is only shown shown now! Save the key in a safe location, and use it later in deployment mode with the argument `--deploy-project <YourApiToken`.
 
 
 ## Deployment mode
 
 ```bash
-thingideploy.py <PathToExpectedFolderStructure> --deploy-project=<YourApiToken> 
+thingideploy.py --deploy-project <YourApiToken>  --path </path/to/new/project_folder>
 ```
 
 Will deploy your project to Thingiverse. The first time this is called, a new Thing is created on Thingiverse, `thingdata.json` will be updated with the new `thing_id`, and all your files will be uploaded for the first time. If the Thing already exists (checked with `thingdata.json`.`thing_id`) it will try to patch your Thing. 
@@ -100,6 +108,7 @@ Deploying your thing will:
 - Set `License` and `Category` depending on `thingdata.json`
 
 *Warning* Thingiverse is amazingly slow to react to new file uploads and metadata changes. After calling with `--deploy-project`, allow Thingiverse to catch up for around 15 minutes before checking your Thing.
+
 
 ## Pipeline usage
 
