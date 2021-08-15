@@ -281,7 +281,7 @@ def create_initial_folder_structure(project_path):
     # Create initial thingdata.json
     thingdata = {
                 "id"            :"",
-                "name"          :"Project Name",
+                "name"          :"Thingideploy Project Name",
                 "creator"       :"YourThingiverseNameHere",
                 "is_wip"        :True,
                 "license"       :"gpl",
