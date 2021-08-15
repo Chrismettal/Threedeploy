@@ -74,11 +74,12 @@ def deploy_files(access_path, files, whitelist, thingdata, headers):
                     else:
                         print("Keeping uploaded version")
 
-                elif access_path == "/images":
-                    print("Replacing existing image: " + localfile["name"])
-                    files_to_patch.append(remotefile)
-                    files_to_delete.append(remotefile)
-                    files_to_upload.append(localfile)
+                # Replacing images is not enabled anymore.
+                #elif access_path == "/images":
+                #    print("Replacing existing image: " + localfile["name"])
+                #    files_to_patch.append(remotefile)
+                #    files_to_delete.append(remotefile)
+                #    files_to_upload.append(localfile)
                 break
         if upload_required:
             files_to_upload.append(localfile)
