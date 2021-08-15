@@ -270,6 +270,8 @@ def create_initial_folder_structure(project_path):
     "Put your source files here, for example .FcStd, .scad etc.\n"
     )
 
+    print("Success!")
+
 
 ##########################################################################
 ##                     Project deployment mode                          ##
