@@ -92,7 +92,7 @@ The API key is NOT saved in the application in any form and is only shown shown 
 ## Deployment mode
 
 ```bash
-thingideploy.py --deploy-project <YourApiToken>  --path </path/to/new/project_folder>
+thingideploy.py --deploy-project <YourApiToken> --path </path/to/new/project_folder>
 ```
 
 Will deploy your project to Thingiverse. The first time this is called, a new Thing is created on Thingiverse, `thingdata.json` will be updated with the new `thing_id`, and all your files will be uploaded for the first time. If the Thing already exists (checked with `thingdata.json`.`thing_id`) it will try to patch your Thing. 
