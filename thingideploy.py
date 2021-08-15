@@ -4,7 +4,7 @@ import json
 import sys
 import os
 import requests
-import webbrowser
+#import webbrowser
 import time
 from datetime import datetime, timezone
 from rauth import OAuth2Service
