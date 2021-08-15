@@ -291,6 +291,10 @@ def deploy_project(project_path, api_token):
 
     # Thing data
     datapath = project_path + "/thingdata.json"
+    if not os.path.isfile(datapath):
+        print("thingdata.json does not exist, have you created your project?")
+        sys.exit(os.EX_USAGE)
+
     with open(datapath, "r", encoding="utf-8") as f:
         thingdata = json.load(f)
         #print("Thingdata: ")
