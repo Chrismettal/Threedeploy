@@ -97,6 +97,8 @@ thingideploy.py --deploy-project=<YourApiToken> --path=</path/to/new/project_fol
 
 Will deploy your project to Thingiverse. The first time this is called, a new Thing is created on Thingiverse, `thingdata.json` will be updated with the new `thing_id`, and all your files will be uploaded for the first time. If the Thing already exists (checked with `thingdata.json`.`thing_id`) it will try to patch your Thing. 
 
+*Warning*, If you run Thingideploy in a CI/CD pipeline, it will not be able to easily update your repos `thingdata.json`. It IS possible to give CI/CD runners push access, but since it will only need it once for initial deployment it is not really worth it. You will manually need to update `thingdata.json` with the new ThingID that is output to the command line and artifacted as `ThingId.txt` on successful creation!
+
 Please also check [Pipeline usage](#pipeline-usage) for information on how to automate deployment.
 
 Deploying your thing will:
@@ -110,7 +112,7 @@ Deploying your thing will:
 - Add `Work in progress` information, depending on `thingdata.json`.`is_wip`
 - Set `License` and `Category` depending on `thingdata.json`
 
-*Warning* Thingiverse is amazingly slow to react to new file uploads and metadata changes. After calling with `--deploy-project`, allow Thingiverse to catch up for around 15 minutes before checking your Thing.
+*Warning*,  Thingiverse is amazingly slow to react to new file uploads and metadata changes. After calling with `--deploy-project`, allow Thingiverse to catch up for around 15 minutes before checking your Thing.
 
 
 ## Pipeline usage
@@ -118,6 +120,8 @@ Deploying your thing will:
 :construction: :construction: :construction:
 
 WIP, please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingideploy is used for automatic CI/CD deployment!
+
+*Warning*, If you run Thingideploy in a CI/CD pipeline, it will not be able to easily update your repos `thingdata.json`. It IS possible to give CI/CD runners push access, but since it will only need it once for initial deployment it is not really worth it. You will manually need to update `thingdata.json` with the new ThingID that is output to the command line and artifacted as `ThingId.txt` on successful creation!
 
 :construction: :construction: :construction:
 
