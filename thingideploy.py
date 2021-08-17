@@ -228,6 +228,7 @@ def publish_project(thingdata, headers):
     
     print("Thing published")
 
+
 ##########################################################################
 ##                      Token generation mode                           ##
 ##########################################################################
@@ -292,12 +293,13 @@ def create_initial_folder_structure(project_path):
     # Create .gitignore
     create_textfile(path = project_path + "/.gitignore",
                     data = 
-    "# Thingideploy specific\n"
+    "# Thingideploy specific\n\n"
     "CreationResponse.json\n"
     "PatchResponse.json\n"
     "*.backup_*\n"
     "InitialCreation\n"
     "ThingURL.txt\n"
+    "ThingID.txt\n"
     "ApiToken.txt\n"
     )
 
@@ -591,8 +593,14 @@ def deploy_project(project_path, api_token):
     print()
     print("Deploying done! Thing URL: ")
     print(thing_url)
+    print("Thing ID:")
+    print(thingdata["id"])
+
     with open(project_path + "/ThingURL.txt", "w") as f:
         f.write(thing_url)
+
+    with open(project_path + "/ThingID.txt", "w") as f:
+        f.write(str(thingdata["id"]))
 
 
 ##########################################################################
