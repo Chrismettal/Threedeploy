@@ -664,7 +664,7 @@ def main():
             print("The path specified does not exist, exiting")
             sys.exit(os.EX_USAGE)
 
-        create_initial_folder_structure(project_path)
+        create_initial_folder_structure(args.path)
 
     elif args.request_token:
         request_token()
