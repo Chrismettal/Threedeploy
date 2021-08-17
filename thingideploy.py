@@ -358,7 +358,7 @@ def create_initial_folder_structure(project_path):
     create_textfile(path = project_path + "/source/README.md",
                     data =
     "# Source file location\n\n"
-    "Put your source files here, for example .FcStd, .scad etc.\n"
+    "Put your source files here, for example .FCStd, .scad etc.\n"
     )
 
     print("Success!")
