@@ -27,7 +27,7 @@ If you like my work please consider supporting my caffeine addiction!
 
 ### WIP WARNING <!-- omit in toc -->
 
-This is a WIP. While all functions except updating Thing descriptions work, there is little in the way of error handling or sanity checking of data.
+This is a WIP. While all functions except updating Thing summary work, there is little in the way of error handling or sanity checking of data.
 
 :construction: :construction: :construction:
 
@@ -117,13 +117,40 @@ Deploying your thing will:
 
 ## Pipeline usage
 
-:construction: :construction: :construction:
 
-WIP, please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingideploy is used for automatic CI/CD deployment!
+For clarity, please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingideploy is used for automatic CI/CD deployment!
 
 *Warning*, If you run Thingideploy in a CI/CD pipeline, it will not be able to easily update your repos `thingdata.json`. It IS possible to give CI/CD runners push access, but since it will only need it once for initial deployment it is not really worth it. You will manually need to update `thingdata.json` with the new ThingID that is output to the command line and artifacted as `ThingId.txt` on successful creation!
 
-:construction: :construction: :construction:
+Below is an example `.gitlab-ci.yml` to automatically deploy and update things that are tracked in a git repo. You will need to put your [API key](#api-token-request-mode) as a GitLab secret called API_KEY to grant the runner access to Thingiverse.
+
+
+```yml
+stages:
+  - deploy
+
+thingideploy:
+  stage: deploy
+  image: "python:3.9.6-buster"
+  script:
+    - git clone https://gitlab.com/chrismettal/thingideploy.git
+    - cd thingideploy
+    - pip install -r requirements.txt
+    - python3 ./thingideploy.py --deploy-project="$API_KEY" --path="$CI_PROJECT_DIR"/ProjectPath/
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/ProjectPath/CreationResponse.json
+      - $CI_PROJECT_DIR/ProjectPath/PatchResponse.json
+      - $CI_PROJECT_DIR/ProjectPath/ThingURL.txt
+      - $CI_PROJECT_DIR/ProjectPath/ThingID.txt
+    expire_in: 1 week
+  only:
+    changes:
+      - ProjectPath/**/*
+      - ProjectPath/*
+```
+
+The runner will just clone the newest version of thingideploy, install the requirements, and run Thingideploy like you would on your local machine. Thingiverse responses are artifacted and the ThingURL and ThingID output just in case. Additionally, the "thingideploy" job only triggers on changes in your 3d project path.
 
 
 # Expected folder structure
