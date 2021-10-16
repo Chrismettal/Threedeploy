@@ -58,20 +58,17 @@ This is a WIP. While all functions except updating Thing summary work, there is 
 
 ## Requirements
 
-With Python 3 installed run:
+With Python 3 and PIP installed run:
 
-`pip install -R requirements.txt`
-
-To fetch all required modules. 
-
+`pip install --upgrade threedeploy`
 
 ## Project creation mode 
 
 ```bash
-./thingideploy.py --create-project --path=</path/to/new/project_folder>
+threedeploy --create-project --path=</path/to/new/project_folder>
 ```
 
-Will create the [expected project structure](#expected-folder-structure) along with all required files at the given location, inside the `project_folder`. 
+Will create the [expected project structure](#expected-folder-structure) along with all required files at the given location, inside `project_folder`. 
 
 *Warning*, `project_folder` itself needs to exist before calling, as the other modes could break if it doesn't already.
 
@@ -81,7 +78,7 @@ Every text file that already exists, will be backed up like `thingdata.json` -->
 ## API token request mode
 
 ```bash
-thingideploy.py --request-token
+threedeploy --request-token
 ```
 
 Will open up your default webbrowser, promting you to login to Thingiverse and grant access to Thingideploy. 
@@ -96,7 +93,7 @@ The API key is NOT saved in the application in any form and is only shown shown 
 ## Deployment mode
 
 ```bash
-thingideploy.py --deploy-project=<YourApiToken> --path=</path/to/new/project_folder>
+threedeploy --deploy-project=<YourApiToken> --path=</path/to/new/project_folder>
 ```
 
 Will deploy your project to Thingiverse. The first time this is called, a new Thing is created on Thingiverse, `thingdata.json` will be updated with the new `thing_id`, and all your files will be uploaded for the first time. If the Thing already exists (checked with `thingdata.json`.`thing_id`) it will try to patch your Thing. 
@@ -122,25 +119,23 @@ Deploying your thing will:
 ## Pipeline usage
 
 
-For clarity, please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingideploy is used for automatic CI/CD deployment!
+For clarity, please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Threedeploy is used for automatic CI/CD deployment!
 
-*Warning*, If you run Thingideploy in a CI/CD pipeline, it will not be able to easily update your repos `thingdata.json`. It IS possible to give CI/CD runners push access, but since it will only need it once for initial deployment it is not really worth it. You will manually need to update `thingdata.json` with the new ThingID that is output to the command line and artifacted as `ThingId.txt` on successful creation!
+*Warning*, If you run Threedeploy in a CI/CD pipeline, it will not be able to easily update your repos `thingdata.json`. It IS possible to give CI/CD runners push access, but since it will only need it once for initial deployment at Thingiverse for example it is not really worth it. You will manually need to update `thingdata.json` with the new ThingID that is output to the command line and artifacted as `ThingId.txt` on successful creation!
 
-Below is an example `.gitlab-ci.yml` to automatically deploy and update things that are tracked in a git repo. You will need to put your [API key](#api-token-request-mode) as a GitLab secret called API_KEY to grant the runner access to Thingiverse.
+Below is an example `.gitlab-ci.yml` to automatically deploy and update things that are tracked in a git repo. You will need to put your [Thingiverse API key](#api-token-request-mode) as a GitLab secret called `THINGIVERSE_API_KEY` to grant the runner access to Thingiverse.
 
 
 ```yml
 stages:
   - deploy
 
-thingideploy:
+deploy_thingiverse:
   stage: deploy
   image: "python:3.9.6-buster"
   script:
-    - git clone https://gitlab.com/chrismettal/thingideploy.git
-    - cd thingideploy
-    - pip install -r requirements.txt
-    - python3 ./thingideploy.py --deploy-project="$API_KEY" --path="$CI_PROJECT_DIR"/ProjectPath/
+    - pip install threedeploy
+    - threedeploy --deploy-project="$THINGIVERSE_API_KEY" --path="$CI_PROJECT_DIR"/ProjectPath/
   artifacts:
     paths:
       - $CI_PROJECT_DIR/ProjectPath/CreationResponse.json
@@ -154,7 +149,7 @@ thingideploy:
       - ProjectPath/*
 ```
 
-The runner will just clone the newest version of thingideploy, install the requirements, and run Thingideploy like you would on your local machine. Thingiverse responses are artifacted and the ThingURL and ThingID output just in case. Additionally, the "thingideploy" job only triggers on changes in your 3d project path.
+The runner will just install and run Threedeploy like you would on your local machine. Thingiverse responses are artifacted and the ThingURL and ThingID output just in case. Additionally, the job only triggers on changes in your 3d project path.
 
 
 # Expected folder structure
