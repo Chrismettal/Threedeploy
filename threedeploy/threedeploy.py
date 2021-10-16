@@ -403,7 +403,7 @@ def deploy_project(project_path, api_token):
             if "error" in thing:
                 if thing["error"] == "Unauthorized":
                     print("Unauthorized, is your API key correct? Exiting")
-                    sys.exit()
+                    sys.exit(os.EX_NOPERM)
 
             # compare provided name with found creator name as sanity check
             if thingdata["creator"] == thing["creator"]["name"]:
