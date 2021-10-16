@@ -42,8 +42,8 @@ This is a WIP. While all functions except updating Thing summary work, there is 
 - [Usage](#usage)
   - [Requirements](#requirements)
   - [Project creation mode](#project-creation-mode)
-  - [API token request mode](#api-token-request-mode)
-  - [Deployment mode](#deployment-mode)
+  - [Thingiverse API token request mode](#thingiverse-api-token-request-mode)
+  - [Deployment mode - Thingiverse](#deployment-mode---thingiverse)
   - [Pipeline usage](#pipeline-usage)
 - [Expected folder structure](#expected-folder-structure)
 - [thingdata.json](#thingdatajson)
@@ -75,10 +75,10 @@ Will create the [expected project structure](#expected-folder-structure) along w
 Every text file that already exists, will be backed up like `thingdata.json` --> `thingdata.json.backup_<Timestamp>` before the new file is generated fresh. These backup files are put in the `.gitignore` so make sure to not `git clean` them away when overwriting your files accidentaly.
 
 
-## API token request mode
+## Thingiverse API token request mode
 
 ```bash
-threedeploy --request-token
+threedeploy --request-token-thingiverse
 ```
 
 Will open up your default webbrowser, promting you to login to Thingiverse and grant access to Thingideploy. 
@@ -90,10 +90,10 @@ The API key is NOT saved in the application in any form and is only shown shown 
 *Warning*, Thingideploy is currently in Thingiverses submission queue. Until it is approved by Thingiverse, only 10 people can use my applications client ID to use Thingideploy! Should that happen before Thingiverse approved Thingideploy, I will add instructions on how to create your own Thingiverse application to generate your own client ID so you can request an API token.
 
 
-## Deployment mode
+## Deployment mode - Thingiverse
 
 ```bash
-threedeploy --deploy-project=<YourApiToken> --path=</path/to/new/project_folder>
+threedeploy --deploy-project-thingiverse=<YourApiToken> --path=</path/to/new/project_folder>
 ```
 
 Will deploy your project to Thingiverse. The first time this is called, a new Thing is created on Thingiverse, `thingdata.json` will be updated with the new `thing_id`, and all your files will be uploaded for the first time. If the Thing already exists (checked with `thingdata.json`.`thing_id`) it will try to patch your Thing. 
@@ -135,7 +135,7 @@ deploy_thingiverse:
   image: "python:3.9.6-buster"
   script:
     - pip install threedeploy
-    - threedeploy --deploy-project="$THINGIVERSE_API_KEY" --path="$CI_PROJECT_DIR"/ProjectPath/
+    - threedeploy --deploy-project-thingiverse="$THINGIVERSE_API_KEY" --path="$CI_PROJECT_DIR"/ProjectPath/
   artifacts:
     paths:
       - $CI_PROJECT_DIR/ProjectPath/CreationResponse.json
@@ -184,23 +184,23 @@ Example `thingdata.json`, providing Thing metadata:
 
 ```json
 {
-    "id": 1234567,
-    "name": "BestThing",
-    "creator": "Chrismettal",
-    "is_wip": true,
-    "license": "gpl",
-    "category": "3D Printer Parts",
+    "name": "Threedeploy - Debug",
     "tags": [
-        "3D",
-        "Printing"
+        "NewTag",
+        "SecondTag"
     ],
-    "is_published": false
+    "thingiverse_id": 4932869,
+    "thingiverse_creator": "Chrismettal",
+    "thingiverse_is_wip": true,
+    "thingiverse_license": "cc",
+    "thingiverse_category": "3D Printer Parts",
+    "thingiverse_is_published": true
 }
 ```
 
 This file is required to exist before deployment, and is best generated with the `--create-project` option.
 
-`creator` is just used as a plausibility check before trying to patch a Thing that you don't own, so it needs to contain your Thingiverse name.All other options have direct impact on all Thing settings that are exposed to the API. Thing summary is supposed to be set via the projects `project_path/README.md` but currently does not work.
+`thingiverse_creator` is just used as a plausibility check before trying to patch a Thing that you don't own, so it needs to contain your Thingiverse name.All other options have direct impact on all Thing settings that are exposed to the API. Thing summary is supposed to be set via the projects `project_path/README.md` but currently does not work.
 
 
 # Supported files

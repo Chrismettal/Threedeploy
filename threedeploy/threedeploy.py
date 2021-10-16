@@ -41,7 +41,7 @@ def thingiverse_deploy_files(access_path, files, whitelist, thingdata, headers):
 
     existing_files = json.loads(
                         requests.get("http://api.thingiverse.com/things/"
-                            + str(thingdata["id"])
+                            + str(thingdata["thingiverse_id"])
                             + access_path, headers=headers).text)
 
 
@@ -133,9 +133,9 @@ def thingiverse_deploy_files(access_path, files, whitelist, thingdata, headers):
         deletion_response = json.loads(
                           requests.delete(
                               "http://api.thingiverse.com/things/"
-                                + str(thingdata["id"])
+                                + str(thingdata["thingiverse_id"])
                                 + access_path + "/"
-                                + str(file["id"]),
+                                + str(file["thingiverse_id"]),
                                 headers=headers).text)
 
         #print(json.dumps(deletion_response, indent=4))
@@ -150,7 +150,7 @@ def thingiverse_deploy_files(access_path, files, whitelist, thingdata, headers):
         params = {"filename":file["name"]}
         upload_creds = json.loads(
                         requests.post("http://api.thingiverse.com/things/"
-                                        + str(thingdata["id"])
+                                        + str(thingdata["thingiverse_id"])
                                         + "/files",
                                         data=json.dumps(params),
                                         headers=headers).text)
@@ -182,7 +182,7 @@ def thingiverse_set_image_order(imgfiles, thingdata, headers):
 
     existing_images = json.loads(
                         requests.get("http://api.thingiverse.com/things/"
-                            + str(thingdata["id"])
+                            + str(thingdata["thingiverse_id"])
                             + "/images", headers=headers).text)
 
     # Iterate through uploaded files
@@ -208,7 +208,7 @@ def thingiverse_set_image_order(imgfiles, thingdata, headers):
         # Actually patch image with new rank
         params      = {"rank":remote_image["rank"]}
         img_answer2 = requests.patch("http://api.thingiverse.com/things/" +
-                                    str(thingdata["id"]) +
+                                    str(thingdata["thingiverse_id"]) +
                                     "/images/"+
                                     str(remote_image["id"]),
                                     headers=headers,
@@ -221,7 +221,7 @@ def thingiverse_publish_project(thingdata, headers):
     """Create publish request"""
     # POST /things/{$id}/publish
     PublishAnswer = requests.post("http://api.thingiverse.com/things/"+
-                                str(thingdata["id"])+
+                                str(thingdata["thingiverse_id"])+
                                 "/publish",
                                 headers=headers)
     
@@ -305,18 +305,18 @@ def create_initial_folder_structure(project_path):
 
     # Create initial thingdata.json
     thingdata = {
-                "id"            :"",
-                "name"          :"Threedeploy Project Name",
-                "creator"       :"YourPlatformNameHere",
-                "is_wip"        :True,
-                "license"       :"gpl",
-                "category"      :"3D Printing",
-                "tags"          : [
-                                "YourTagsHere",
-                                "likeThis"
-                                "Threedeploy",
+                "name"                      :"Threedeploy Project Name",
+                "tags"                      : [
+                                            "YourTagsHere",
+                                            "likeThis"
+                                            "Threedeploy",
                 ],
-                "is_published"  :False
+                "thingiverse_id"            :"",
+                "thingiverse_creator"       :"YourThingiverseNameHere",
+                "thingiverse_is_wip"        :True,
+                "thingiverse_license"       :"gpl",
+                "thingiverse_category"      :"3D Printing",
+                "thingiverse_is_published"  :False
     }
     create_textfile(path = project_path + "/thingdata.json",
                     data =json.dumps(thingdata, indent=4))
@@ -368,171 +368,8 @@ def create_initial_folder_structure(project_path):
 ##########################################################################
 ##                     Project deployment mode                          ##
 ##########################################################################
-def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles):
-    ##########################################################################
-    ##                     Thingiverse deployment                           ##
-    ##########################################################################
-    
-    headers = {"Authorization": "Bearer " + api_token}
-    
-    # check if thing already exists, if id is provided
-    if thingdata["id"] != "":
-        thing = json.loads(
-                    requests.get("http://api.thingiverse.com/things/" 
-                                + str(thingdata["id"]), 
-                                headers=headers).text)
 
-        # Check if we returned an error
-        if "error" in thing:
-            if thing["error"] == "Unauthorized":
-                print("Unauthorized, is your API key correct? Exiting")
-                sys.exit(os.EX_NOPERM)
-            if thing["error"] == "Not Found":
-                print("Thing ID specified but Thing not found, exiting")
-                sys.exit(os.EX_USAGE)
-
-        # compare provided name with found creator name as sanity check
-        if thingdata["creator"] == thing["creator"]["name"]:
-            mode = "patch"
-            print("Thing already exists, running in patch mode")
-        else:
-            print("""Thing ID specified in flags.json does not belong to 
-                        creator, exiting""")
-            sys.exit(os.EX_NOPERM)
-
-    else:
-        mode = "create"
-        print("No thing ID provided, running in creation mode")
-    print("----------------------------------------")
-
-    ########## Thing creation
-    # If ID wasn't already found, first create thing
-    if mode == "create":
-
-        print()
-        print("Creating thing")
-
-        # initial file creation
-        params = {"name":           thingdata["name"],
-                  "license":        thingdata["license"],
-                  "category":       thingdata["category"],
-                 #"description":    currently broken on Thingiverse,
-                 #"instructions":   currently broken on Thingiverse,
-                  "is_wip":         thingdata["is_wip"],
-                  "tags":           thingdata["tags"]}
-
-        thing = json.loads(
-                        requests.post("http://api.thingiverse.com/things/",
-                        headers=headers,
-                        data=json.dumps(params)).text)
-
-        # Output response to file for debugging
-        with open(project_path + "/CreationResponse.json", "w") as f:
-            f.write(json.dumps(thing, indent=4))
-
-        new_thing_id = thing["id"]
-
-        # check if valid answer received
-        if new_thing_id != "":
-            print("Thing creation succesful, thing ID:")
-            print(new_thing_id)
-        
-        # Update flags document with newly created ID
-        thingdata["id"] = new_thing_id
-        with open(datapath, "w", encoding="utf-8") as f:
-            f.write(json.dumps(thingdata, indent=4))
-
-        # Output initial creation file for pipeline
-        with open(project_path + "/InitialCreation", "w") as f:
-            print("InitialCreation file generated")
-            f.write("Initial creation success")
-
-
-    ########## Thing info patching  
-    # Otherwise, go into patching mode
-    elif mode == "patch":
-        
-        print("Patching thing")
-
-        params = {"name":           thingdata["name"],
-                  "license":        thingdata["license"],
-                  "category":       thingdata["category"],
-                 #"description":    description,
-                 #"instructions":   "None provided",
-                  "is_wip":         thingdata["is_wip"],
-                  "tags":           thingdata["tags"]}
-
-        requests.patch("http://api.thingiverse.com/things/"
-                                    + str(thingdata["id"])
-                                    + "/", headers=headers,
-                                    data=json.dumps(params))
-
-        # wait a tick before pulling an answer
-        # since Thingiverse does not populate all answers instantly
-        print("Waiting for Thingiverse to refresh tags in response")
-        time.sleep(2) 
-
-        thing = json.loads(requests.get("http://api.thingiverse.com/things/"
-                                    + str(thingdata["id"])
-                                    + "/", headers=headers).text)
-
-        already_published = thing["is_published"]
-
-        # Output response to file for debugging, loads/dumps formats document
-        with open(project_path + "/PatchResponse.json", "w") as f:
-                f.write(json.dumps(thing, indent=4))
-
-        # Check if valid answer received
-        if thing["id"] == thingdata["id"]:
-            print("Thing patching succesful")
-    
-        # Remove InitialCreation file on repeat runs
-        if os.path.exists(project_path + "/InitialCreation"):
-            os.remove(project_path + "/InitialCreation")
-            print("InitialCreation file removed")
-
-
-    # Model file upload
-    print("----------------------------------------")
-    print("Deploying model files:")
-    thingiverse_deploy_files("/files", modelfiles, "whitelist", thingdata, headers)
-
-    # Image upload
-    print("----------------------------------------")
-    print("Deploying images:")
-    thingiverse_deploy_files("/images", imgfiles, modelfiles, thingdata, headers)
-    thingiverse_set_image_order(imgfiles, thingdata, headers)
-
-    # Publishing
-    print("----------------------------------------")
-    print("Testing if publishing is required")
-    if thingdata["is_published"] and not thing["is_published"]:
-        print("Publishing thing")
-        thingiverse_publish_project(thingdata, headers)
-
-    elif not thingdata["is_published"]:
-        print("Publishing not requested")
-
-    elif thing["is_published"]:
-        print("Thing already published")
-
-
-    # Output thing URL to artifact and terminal
-    thing_url = "https://thingiverse.com/thing:" + str(thingdata["id"])
-    print("----------------------------------------")
-    print("Deploying done! Thing URL: ")
-    print(thing_url)
-    print("Thing ID:")
-    print(thingdata["id"])
-    print("----------------------------------------")
-
-    with open(project_path + "/ThingURL.txt", "w") as f:
-        f.write(thing_url)
-
-    with open(project_path + "/ThingID.txt", "w") as f:
-        f.write(str(thingdata["id"]))
-
-
+########## General
 def deploy_project(project_path, api_token, destination):
     """Deploy the project using an API token generated by --request-token"""
 
@@ -607,7 +444,7 @@ def deploy_project(project_path, api_token, destination):
             file.endswith(".bmp")):
             imgfiles.append({"name":file, 
                              "path":os.path.join(imgpath, file),
-                             "id":0})
+                             "thingiverse_id":0})
 
     print("Found image files: ")
     for file in imgfiles:
@@ -632,6 +469,171 @@ def deploy_project(project_path, api_token, destination):
     elif destination == 'thangs':
         print('Thangs deployment not implemented yet, sorry')
         sys.exit(OS.EX_USAGE)
+
+########## Thingiverse
+def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles):
+    ##########################################################################
+    ##                     Thingiverse deployment                           ##
+    ##########################################################################
+    
+    headers = {"Authorization": "Bearer " + api_token}
+    
+    # check if thing already exists, if id is provided
+    if thingdata["thingiverse_id"] != "":
+        thing = json.loads(
+                    requests.get("http://api.thingiverse.com/things/" 
+                                + str(thingdata["thingiverse_id"]), 
+                                headers=headers).text)
+
+        # Check if we returned an error
+        if "error" in thing:
+            if thing["error"] == "Unauthorized":
+                print("Unauthorized, is your API key correct? Exiting")
+                sys.exit(os.EX_NOPERM)
+            if thing["error"] == "Not Found":
+                print("Thing ID specified but Thing not found, exiting")
+                sys.exit(os.EX_USAGE)
+
+        # compare provided name with found creator name as sanity check
+        if thingdata["thingiverse_creator"] == thing["creator"]["name"]:
+            mode = "patch"
+            print("Thing already exists, running in patch mode")
+        else:
+            print("""Thing ID specified in flags.json does not belong to 
+                        creator, exiting""")
+            sys.exit(os.EX_NOPERM)
+
+    else:
+        mode = "create"
+        print("No thing ID provided, running in creation mode")
+    print("----------------------------------------")
+
+    ########## Thing creation
+    # If ID wasn't already found, first create thing
+    if mode == "create":
+
+        print()
+        print("Creating thing")
+
+        # initial file creation
+        params = {"name":           thingdata["name"],
+                  "thingiverse_license":        thingdata["thingiverse_license"],
+                  "thingiverse_category":       thingdata["thingiverse_category"],
+                 #"description":    currently broken on Thingiverse,
+                 #"instructions":   currently broken on Thingiverse,
+                  "thingiverse_is_wip":         thingdata["thingiverse_is_wip"],
+                  "tags":           thingdata["tags"]}
+
+        thing = json.loads(
+                        requests.post("http://api.thingiverse.com/things/",
+                        headers=headers,
+                        data=json.dumps(params)).text)
+
+        # Output response to file for debugging
+        with open(project_path + "/CreationResponse.json", "w") as f:
+            f.write(json.dumps(thing, indent=4))
+
+        new_thing_id = thing["id"]
+
+        # check if valid answer received
+        if new_thing_id != "":
+            print("Thing creation succesful, thing ID:")
+            print(new_thing_id)
+        
+        # Update flags document with newly created ID
+        thingdata["thingiverse_id"] = new_thing_id
+        with open(datapath, "w", encoding="utf-8") as f:
+            f.write(json.dumps(thingdata, indent=4))
+
+        # Output initial creation file for pipeline
+        with open(project_path + "/InitialCreation", "w") as f:
+            print("InitialCreation file generated")
+            f.write("Initial creation success")
+
+
+    ########## Thing info patching  
+    # Otherwise, go into patching mode
+    elif mode == "patch":
+        
+        print("Patching thing")
+
+        params = {"name":           thingdata["name"],
+                  "thingiverse_license":        thingdata["thingiverse_license"],
+                  "thingiverse_category":       thingdata["thingiverse_category"],
+                 #"description":    description,
+                 #"instructions":   "None provided",
+                  "thingiverse_is_wip":         thingdata["thingiverse_is_wip"],
+                  "tags":           thingdata["tags"]}
+
+        requests.patch("http://api.thingiverse.com/things/"
+                                    + str(thingdata["thingiverse_id"])
+                                    + "/", headers=headers,
+                                    data=json.dumps(params))
+
+        # wait a tick before pulling an answer
+        # since Thingiverse does not populate all answers instantly
+        print("Waiting for Thingiverse to refresh tags in response")
+        time.sleep(2) 
+
+        thing = json.loads(requests.get("http://api.thingiverse.com/things/"
+                                    + str(thingdata["thingiverse_id"])
+                                    + "/", headers=headers).text)
+
+        already_published = thing["is_published"]
+
+        # Output response to file for debugging, loads/dumps formats document
+        with open(project_path + "/PatchResponse.json", "w") as f:
+                f.write(json.dumps(thing, indent=4))
+
+        # Check if valid answer received
+        if thing["id"] == thingdata["thingiverse_id"]:
+            print("Thing patching succesful")
+    
+        # Remove InitialCreation file on repeat runs
+        if os.path.exists(project_path + "/InitialCreation"):
+            os.remove(project_path + "/InitialCreation")
+            print("InitialCreation file removed")
+
+
+    # Model file upload
+    print("----------------------------------------")
+    print("Deploying model files:")
+    thingiverse_deploy_files("/files", modelfiles, "whitelist", thingdata, headers)
+
+    # Image upload
+    print("----------------------------------------")
+    print("Deploying images:")
+    thingiverse_deploy_files("/images", imgfiles, modelfiles, thingdata, headers)
+    thingiverse_set_image_order(imgfiles, thingdata, headers)
+
+    # Publishing
+    print("----------------------------------------")
+    print("Testing if publishing is required")
+    if thingdata["thingiverse_is_published"] and not thing["is_published"]:
+        print("Publishing thing")
+        thingiverse_publish_project(thingdata, headers)
+
+    elif not thingdata["thingiverse_is_published"]:
+        print("Publishing not requested")
+
+    elif thing["is_published"]:
+        print("Thing already published")
+
+
+    # Output thing URL to artifact and terminal
+    thing_url = "https://thingiverse.com/thing:" + str(thingdata["thingiverse_id"])
+    print("----------------------------------------")
+    print("Deploying done! Thing URL: ")
+    print(thing_url)
+    print("Thing ID:")
+    print(thingdata["thingiverse_id"])
+    print("----------------------------------------")
+
+    with open(project_path + "/ThingURL.txt", "w") as f:
+        f.write(thing_url)
+
+    with open(project_path + "/ThingID.txt", "w") as f:
+        f.write(str(thingdata["thingiverse_id"]))
 
 
 ##########################################################################
@@ -674,7 +676,7 @@ def main():
 
     # Deploy to Thingiverse, using the provided Thingiverse API key
     parser.add_argument("--deploy-project-thingiverse", 
-                        metavar="thingiverse-apitoken",
+                        metavar="thingiverse_apitoken",
                         type=str, 
                         help=
     "Deploy to Thingiverse if set. "
@@ -684,9 +686,11 @@ def main():
     args = parser.parse_args()
 
 
-    # prioritize between different modes
+    ##########################################################################
+    ##                              Modes                                   ##
+    ##########################################################################
 
-    # project creation mode
+    ########## project creation mode
     if args.create_project:
         # Test path
         if not args.path:
@@ -698,11 +702,11 @@ def main():
 
         create_initial_folder_structure(args.path)
 
-    # thingiverse API token request
+    ########## thingiverse API token request
     elif args.request_token_thingiverse:
         thingiverse_request_token()
 
-    # project deployment
+    ########## project deployment
     elif args.deploy_project_thingiverse:
         # or myminifactory
         # or prusaprinters
