@@ -286,14 +286,14 @@ def create_initial_folder_structure(project_path):
                     data =
     "# Project Name\n\n"
     "Summary of your project.\n\n"
-    "Published with [3D-ploy]"
-    "(https://gitlab.com/chrismettal/3D-ploy)\n"
+    "Published with [Threedeploy]"
+    "(https://gitlab.com/chrismettal/threedeploy)\n"
     )
 
     # Create .gitignore
     create_textfile(path = project_path + "/.gitignore",
                     data = 
-    "# 3D-ploy specific\n\n"
+    "# Threedeploy specific\n\n"
     "CreationResponse.json\n"
     "PatchResponse.json\n"
     "*.backup_*\n"
@@ -306,7 +306,7 @@ def create_initial_folder_structure(project_path):
     # Create initial thingdata.json
     thingdata = {
                 "id"            :"",
-                "name"          :"3D-ploy Project Name",
+                "name"          :"Threedeploy Project Name",
                 "creator"       :"YourPlatformNameHere",
                 "is_wip"        :True,
                 "license"       :"gpl",
@@ -314,7 +314,7 @@ def create_initial_folder_structure(project_path):
                 "tags"          : [
                                 "YourTagsHere",
                                 "likeThis"
-                                "3D-ploy",
+                                "Threedeploy",
                 ],
                 "is_published"  :False
     }
@@ -620,7 +620,7 @@ def main():
 
     print()
     print("----------------------------------------")
-    print("------------- 3D-ploy start ------------")
+    print("----------- Threedeploy start ----------")
     print("----------------------------------------")
     print()
 
