@@ -1,4 +1,4 @@
-![Banner](img/Banner.png)
+# 3D-ploy <!-- omit in toc -->
 
 Python app to automatically deploy a project to Thingiverse. Can be used manually, but is really supposed to be used via GitLab CI/CD or Github Actions for example.
 
@@ -14,7 +14,7 @@ Additionaly, there is a [project creation mode](#project-creation-mode) to creat
 
 Please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingideploy is used for automatic CI/CD deployment!
 
-![ExampleScreenshot](img/Example.png)
+![ExampleScreenshot](img/Thingiverse-Example.png)
 
 
 If you like my work please consider supporting my caffeine addiction!

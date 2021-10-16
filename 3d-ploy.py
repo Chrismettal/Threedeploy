@@ -32,7 +32,7 @@ def create_textfile(path, data):
 
 
 def deploy_files(access_path, files, whitelist, thingdata, headers):
-    """Deploys files to Thingiverse"""
+    """Deploys files.."""
 
     ########## File checks
 
@@ -286,14 +286,14 @@ def create_initial_folder_structure(project_path):
                     data =
     "# Project Name\n\n"
     "Summary of your project.\n\n"
-    "Published with [Thingideploy]"
-    "(https://gitlab.com/chrismettal/thingideploy)\n"
+    "Published with [3D-ploy]"
+    "(https://gitlab.com/chrismettal/3D-ploy)\n"
     )
 
     # Create .gitignore
     create_textfile(path = project_path + "/.gitignore",
                     data = 
-    "# Thingideploy specific\n\n"
+    "# 3D-ploy specific\n\n"
     "CreationResponse.json\n"
     "PatchResponse.json\n"
     "*.backup_*\n"
@@ -306,14 +306,15 @@ def create_initial_folder_structure(project_path):
     # Create initial thingdata.json
     thingdata = {
                 "id"            :"",
-                "name"          :"Thingideploy Project Name",
-                "creator"       :"YourThingiverseNameHere",
+                "name"          :"3D-ploy Project Name",
+                "creator"       :"YourPlatformNameHere",
                 "is_wip"        :True,
                 "license"       :"gpl",
                 "category"      :"3D Printing",
                 "tags"          : [
                                 "YourTagsHere",
-                                "Thingideploy"
+                                "likeThis"
+                                "3D-ploy",
                 ],
                 "is_published"  :False
     }
@@ -397,6 +398,12 @@ def deploy_project(project_path, api_token):
                         requests.get("http://api.thingiverse.com/things/" 
                                     + str(thingdata["id"]), 
                                     headers=headers).text)
+
+            # Check if we returned an error
+            if "error" in thing:
+                if thing["error"] == "Unauthorized":
+                    print("Unauthorized, is your API key correct? Exiting")
+                    sys.exit()
 
             # compare provided name with found creator name as sanity check
             if thingdata["creator"] == thing["creator"]["name"]:
@@ -613,7 +620,7 @@ def main():
 
     print()
     print("----------------------------------------")
-    print("---------- Thingideploy start ----------")
+    print("------------- 3D-ploy start ------------")
     print("----------------------------------------")
     print()
 
@@ -623,7 +630,7 @@ def main():
     ##########################################################################
 
     parser = argparse.ArgumentParser(description=
-                     "Upload 3D printing project to Thingiverse automatically")
+                     "Upload 3D projects to multiple sites automatically")
 
     # Project path
     parser.add_argument("--path", metavar="path", type=str,
