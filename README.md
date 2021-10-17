@@ -1,5 +1,6 @@
 ![Banner](img/Banner.png)
 
+[![GitLab tag (latest by SemVer)](https://img.shields.io/gitlab/v/tag/chrismettal/threedeploy?label=Master&style=flat-square)](https://gitlab.com/Chrismettal/threedeploy/-/tags)
 [![PyPI - Version](https://img.shields.io/pypi/v/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
 [![PyPI - License](https://img.shields.io/pypi/l/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
