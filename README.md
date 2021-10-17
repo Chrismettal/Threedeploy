@@ -1,8 +1,8 @@
 ![Banner](img/Banner.png)
 
-[![PyPI - Version](https://img.shields.io/pypi/v/splive?style=flat-square)](https://pypi.org/project/threedeploy/)
-[![PyPI - License](https://img.shields.io/pypi/l/splive?style=flat-square)](https://pypi.org/project/threedeploy/)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/splive?style=flat-square)](https://pypi.org/project/threedeploy/)
+[![PyPI - Version](https://img.shields.io/pypi/v/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
+[![PyPI - License](https://img.shields.io/pypi/l/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
 
 Python app to automatically deploy a project to Thingiverse. Can be used manually, but is really supposed to be used via GitLab CI/CD or Github Actions for example.
 
