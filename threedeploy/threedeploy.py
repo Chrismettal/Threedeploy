@@ -135,7 +135,7 @@ def thingiverse_deploy_files(access_path, files, whitelist, thingdata, headers):
                               "http://api.thingiverse.com/things/"
                                 + str(thingdata["thingiverse_id"])
                                 + access_path + "/"
-                                + str(file["thingiverse_id"]),
+                                + str(file["id"]),
                                 headers=headers).text)
 
         #print(json.dumps(deletion_response, indent=4))
