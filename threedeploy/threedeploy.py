@@ -475,6 +475,8 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
     ##########################################################################
     ##                     Thingiverse deployment                           ##
     ##########################################################################
+    ########## Thing data
+    datapath = project_path + "/thingdata.json"
     
     headers = {"Authorization": "Bearer " + api_token}
     
