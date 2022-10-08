@@ -501,7 +501,7 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
             mode = "patch"
             print("Thing already exists, running in patch mode")
         else:
-            print("""Thing ID specified in flags.json does not belong to 
+            print("""Thing ID specified in thingdata.json does not belong to 
                         creator, exiting""")
             sys.exit(os.EX_NOPERM)
 
