@@ -1,6 +1,5 @@
 ![Banner](img/Banner.png)
 
-[![GitLab tag (latest by SemVer)](https://img.shields.io/gitlab/v/tag/chrismettal/threedeploy?label=Master&style=flat-square)](https://gitlab.com/Chrismettal/threedeploy/-/tags)
 [![PyPI - Version](https://img.shields.io/pypi/v/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
 [![PyPI - License](https://img.shields.io/pypi/l/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/threedeploy?style=flat-square)](https://pypi.org/project/threedeploy/)
@@ -17,11 +16,9 @@ Providing the correct project structure, Thingideploy will do the following:
 
 Additionaly, there is a [project creation mode](#project-creation-mode) to create the [expected folder structure](#expected-folder-structure) and generate initial Thing metadata, as well as an [API token request mode](#api-token-request-mode) to generate your own API token.
 
-Please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Thingideploy is used for automatic CI/CD deployment!
-
 ![ExampleScreenshot](img/Thingiverse-Example.png)
 
-**If you like my work please consider [supporting my caffeine addiction](https://gitlab.com/Chrismettal#donations)!**
+**If you like my work please consider [supporting my caffeine addiction](https://github.com/Chrismettal#donations)!**
 
 ---
 
@@ -116,8 +113,9 @@ Deploying your thing will:
 
 ## Pipeline usage
 
+**Warning: This example was written for GitLab and needs to be modified for Github.**
 
-For clarity, please see my [example Repo](https://gitlab.com/chrismettal/LasS0) where Threedeploy is used for automatic CI/CD deployment!
+For clarity, please see my [example Repo](https://github.com/chrismettal/LasS0) where Threedeploy is used for automatic CI/CD deployment!
 
 *Warning*, If you run Threedeploy in a CI/CD pipeline, it will not be able to easily update your repos `thingdata.json`. It IS possible to give CI/CD runners push access, but since it will only need it once for initial deployment at Thingiverse for example it is not really worth it. You will manually need to update `thingdata.json` with the new ThingID that is output to the command line and artifacted as `ThingId.txt` on successful creation!
 
