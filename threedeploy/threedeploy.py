@@ -7,14 +7,24 @@ import requests
 import webbrowser
 import time
 import re
+import logging.config
+import yaml
 from datetime import datetime, timezone
 from shutil import copyfile
+from requests import Response
+
+
+logger = logging.getLogger(__name__)
+
 
 ##########################################################################
 ##                          Global constants                            ##
 ##########################################################################
 # The Thingiverse ID of this app for requesting an API key
-THINGIVERSE_CLIENT_ID = "844fde0b2950ccf35329"  
+THINGIVERSE_CLIENT_ID = "844fde0b2950ccf35329"
+
+LOGGING_CONFIG_NAME = "logging.yaml"
+LOGGING_DEFAULT_FORMAT = "[%(asctime)s][%(levelname)s][%(name)s]: %(message)s"
 
 ##########################################################################
 ##                            Helpers                                   ##
@@ -33,14 +43,45 @@ def create_textfile(path, data):
     with open(path, "w") as f:
                 f.write(data)
 
+
+def verbose_request_logging(request_type: str, **kwargs) -> None:
+    if "headers" in kwargs:
+        logger.debug("%s headers: %s", request_type, kwargs["headers"])
+    if "params" in kwargs:
+        logger.debug("%s params: %s", request_type, kwargs["params"])
+    if "files" in kwargs:
+        logger.debug("%s files: %s", request_type, kwargs["files"])
+    if "data" in kwargs:
+        logger.debug("%s data: %s", request_type, kwargs["data"])
+
+
+def get(url: str, **kwargs) -> Response:
+    verbose_request_logging("GET", **kwargs)
+    return requests.get(url, **kwargs)
+
+
+def post(url: str, **kwargs) -> Response:
+    verbose_request_logging("POST", **kwargs)
+    return requests.post(url, **kwargs)
+
+
+def patch(url: str, **kwargs) -> Response:
+    verbose_request_logging("PATCH", **kwargs)
+    return requests.patch(url, **kwargs)
+
+
+def delete(url: str, **kwargs) -> Response:
+    verbose_request_logging("DELETE", **kwargs)
+    return requests.delete(url, **kwargs)
+
+
 ########## Thingiverse
 def thingiverse_deploy_files(access_path, files, whitelist, thingdata, headers):
     """Deploys files.."""
 
     ########## File checks
 
-    existing_files = json.loads(
-                        requests.get("http://api.thingiverse.com/things/"
+    existing_files = json.loads(get("https://api.thingiverse.com/things/"
                             + str(thingdata["thingiverse_id"])
                             + access_path, headers=headers).text)
 
@@ -70,19 +111,19 @@ def thingiverse_deploy_files(access_path, files, whitelist, thingdata, headers):
                                           naive_upload_timestamp.replace(
                                               tzinfo=timezone.utc))
 
-                    print("Checking timestamps for existing file:")
-                    print(remotefile["name"])
+                    logger.info("Checking timestamps for existing file:")
+                    logger.info(remotefile["name"])
                     if localfile["date"] > upload_timestamp:
-                        print("Replacing file")
+                        logger.info("Replacing file")
                         files_to_patch.append(remotefile)
                         files_to_delete.append(remotefile)
                         files_to_upload.append(localfile)
                     else:
-                        print("Keeping uploaded version")
+                        logger.info("Keeping uploaded version")
 
                 # Replacing images is not enabled anymore.
                 #elif access_path == "/images":
-                #    print("Replacing existing image: " + localfile["name"])
+                #    logger.info("Replacing existing image: " + localfile["name"])
                 #    files_to_patch.append(remotefile)
                 #    files_to_delete.append(remotefile)
                 #    files_to_upload.append(localfile)
@@ -116,59 +157,54 @@ def thingiverse_deploy_files(access_path, files, whitelist, thingdata, headers):
 
 
     # output upcoming file operations
-    print("Files to be uploaded:")
+    logger.info("Files to be uploaded:")
     for file in files_to_upload:
-        print(file["name"])
+        logger.info(file["name"])
 
-    print("Files to be deleted:")
+    logger.info("Files to be deleted:")
     for file in files_to_delete:
-        print(file["name"])
+        logger.info(file["name"])
 
     ########## File deletions
 
     for file in files_to_delete:
 
-        print("Starting deletion of " + file["name"])
+        logger.info("Starting deletion of %s", file["name"])
 
-        deletion_response = json.loads(
-                          requests.delete(
-                              "http://api.thingiverse.com/things/"
+        deletion_response = json.loads(delete("https://api.thingiverse.com/things/"
                                 + str(thingdata["thingiverse_id"])
                                 + access_path + "/"
                                 + str(file["id"]),
                                 headers=headers).text)
 
-        #print(json.dumps(deletion_response, indent=4))
+        #logger.info(json.dumps(deletion_response, indent=4))
 
     ########## File uploads
 
     for file in files_to_upload:
-        print("Starting upload of " + file["name"])
+        logger.info("Starting upload of %s", file["name"])
 
         # open up transfer
-        print("Opening transfer")
-        params = {"filename":file["name"]}
+        logger.info("Opening transfer")
+        params = {"filename": file["name"]}
         upload_creds = json.loads(
-                        requests.post("http://api.thingiverse.com/things/"
+                        post("https://api.thingiverse.com/things/"
                                         + str(thingdata["thingiverse_id"])
                                         + "/files",
                                         data=json.dumps(params),
                                         headers=headers).text)
-        #print(json.dumps(upload_creds, indent=4))
+        logger.debug(json.dumps(upload_creds, indent=4))
 
         # actually transfer
-        print("Starting transfer")
+        logger.info("Starting transfer")
 
         files = {'file': open(file["path"], 'rb')}
         params = upload_creds["fields"]
 
-        requests.post(
-            "http://thingiverse-production-new.s3.amazonaws.com",
-            files=files, data=params, 
-            allow_redirects=False).text
+        post("https://www.thingiverse.com/upload_file_storage", files=files, data=params, allow_redirects=False)
 
         # close transfer
-        print("Closing transfer")
+        logger.info("Closing transfer")
         finalize_response = json.loads(
                              requests.post(
                               upload_creds["fields"]["success_action_redirect"],
@@ -178,10 +214,9 @@ def thingiverse_deploy_files(access_path, files, whitelist, thingdata, headers):
 def thingiverse_set_image_order(imgfiles, thingdata, headers):
     """Sets image order of recently uploaded pictures, based on filename"""
 
-    print("Ranking images based on file names")
+    logger.info("Ranking images based on file names")
 
-    existing_images = json.loads(
-                        requests.get("http://api.thingiverse.com/things/"
+    existing_images = json.loads(get("https://api.thingiverse.com/things/"
                             + str(thingdata["thingiverse_id"])
                             + "/images", headers=headers).text)
 
@@ -191,41 +226,35 @@ def thingiverse_set_image_order(imgfiles, thingdata, headers):
         # Assign rank to each file that has a valid name
         if re.match("[0-9][0-9]-+", remote_image["name"]) is not None:
             remote_image["rank"] = remote_image["name"][:2]
-            print("Found valid filename: " +
-                    remote_image["name"] + 
-                    ", Rank: ",
-                    remote_image["rank"])
+            logger.info("Found valid filename: %s, Rank: %s",remote_image["name"], remote_image["rank"])
         # If no valid name is found, assign rank starting from 100
         else:
             remote_image["rank"] = 100 + number_of_invalid_filenames
             number_of_invalid_filenames += 1
 
-            print("Not a valid filename for ranking: " + 
-                    remote_image["name"] + 
-                    ", Rank: ",
-                    remote_image["rank"])
+            logger.info("Not a valid filename for ranking: %s, Rank: %s", remote_image["name"], remote_image["rank"])
 
         # Actually patch image with new rank
         params      = {"rank":remote_image["rank"]}
-        img_answer2 = requests.patch("http://api.thingiverse.com/things/" +
+        img_answer2 = patch("https://api.thingiverse.com/things/" +
                                     str(thingdata["thingiverse_id"]) +
                                     "/images/"+
                                     str(remote_image["id"]),
                                     headers=headers,
                                     data=json.dumps(params))
 
-    print("All images ranked")
+    logger.info("All images ranked")
 
 
 def thingiverse_publish_project(thingdata, headers):
     """Create publish request"""
     # POST /things/{$id}/publish
-    PublishAnswer = requests.post("http://api.thingiverse.com/things/"+
+    PublishAnswer = requests.post("https://api.thingiverse.com/things/"+
                                 str(thingdata["thingiverse_id"])+
                                 "/publish",
                                 headers=headers)
     
-    print("Thing published")
+    logger.info("Thing published")
 
 
 ##########################################################################
@@ -235,7 +264,7 @@ def thingiverse_publish_project(thingdata, headers):
 def thingiverse_request_token():
     """Take app client ID and generate an API token with write acces"""
 
-    print("Running in API token request mode")
+    logger.info("Running in API token request mode")
 
     # Open up a webbrowser with the authorization URL
     webbrowser.open(url = 
@@ -246,13 +275,13 @@ def thingiverse_request_token():
         autoraise=True);
 
 
-    print("Opening webbrowser, please authorize.")
-    print("After authorizing, copy the response URL")
-    print("from your address bar and paste here:")
+    logger.info("Opening webbrowser, please authorize.")
+    logger.info("After authorizing, copy the response URL")
+    logger.info("from your address bar and paste here:")
     access_code = input("Response URL: ")
 
     if "access_token=" not in access_code: 
-        print("Invalid response URL, string \"acces_token=\" not found.")
+        logger.error("Invalid response URL, string \"acces_token=\" not found.")
         sys.exit(os.EX_USAGE)
     else:
         split_code = access_code.split("access_token=")
@@ -260,16 +289,16 @@ def thingiverse_request_token():
         if len(split_code[1]) > 0:
             new_api_key = split_code[1]
 
-            print()
-            print("Your API key was generated, put it in a safe location")
-            print("and use it for deploying like --deploy-project=<ApiKey>")
-            print()
-            print("Key: ")
-            print(new_api_key)
-            print()
-            print("Using this, you can run '--deploy-project-thingiverse <API_KEY>'!")
+            logger.info()
+            logger.info("Your API key was generated, put it in a safe location")
+            logger.info("and use it for deploying like --deploy-project=<ApiKey>")
+            logger.info()
+            logger.info("Key: ")
+            logger.info(new_api_key)
+            logger.info()
+            logger.info("Using this, you can run '--deploy-project-thingiverse <API_KEY>'!")
         else:
-            print("Invalid response URL, api token empty.")
+            logger.info("Invalid response URL, api token empty.")
             sys.exit(os.EX_USAGE)
 
 ##########################################################################
@@ -278,8 +307,8 @@ def thingiverse_request_token():
 def create_initial_folder_structure(project_path):
     """Create the initial project structure at the target location"""
 
-    print("Creating initial project structure at:")
-    print(project_path)
+    logger.info("Creating initial project structure at:")
+    logger.info(project_path)
 
     # Create overall project README
     create_textfile(path = project_path + "/README.md",
@@ -362,7 +391,7 @@ def create_initial_folder_structure(project_path):
     "Put your source files here, for example .FCStd, .scad etc.\n"
     )
 
-    print("Success!")
+    logger.info("Success!")
 
 
 ##########################################################################
@@ -373,7 +402,7 @@ def create_initial_folder_structure(project_path):
 def deploy_project(project_path, api_token, destination):
     """Deploy the project using an API token generated by --request-token"""
 
-    print("Deploying project:")
+    logger.info("Deploying project:")
 
     ##########################################################################
     ##                          File parsing                                ##
@@ -382,21 +411,21 @@ def deploy_project(project_path, api_token, destination):
     ########## Thing data
     datapath = project_path + "/thingdata.json"
     if not os.path.isfile(datapath):
-        print("thingdata.json does not exist, have you created your project?")
+        logger.error("thingdata.json does not exist, have you created your project?")
         sys.exit(os.EX_USAGE)
 
     with open(datapath, "r", encoding="utf-8") as f:
         thingdata = json.load(f)
 
-    print(thingdata["name"])
+    logger.info(thingdata["name"])
 
     ########## Description
     descpath = project_path + "/README.md"
     with open(descpath, "r", encoding="utf-8") as f:
         description = f.read()
-        print("--------------Description---------------")
-        print(description)
-        print("----------------------------------------")
+        logger.info("--------------Description---------------")
+        logger.info(description)
+        logger.info("----------------------------------------")
 
     ########## model / source files
     threedpath      = project_path + "/3d"
@@ -430,10 +459,10 @@ def deploy_project(project_path, api_token, destination):
                                 "date":os.path.getmtime(
                                     os.path.join(gcodepath, file))})
 
-    print("Found model files: ")
+    logger.info("Found model files: ")
     for file in modelfiles:
-        print(file["name"])
-    print("----------------------------------------")
+        logger.info(file["name"])
+    logger.info("----------------------------------------")
 
     ########## Images
     imgpath         = project_path + "/img"
@@ -446,29 +475,29 @@ def deploy_project(project_path, api_token, destination):
                              "path":os.path.join(imgpath, file),
                              "thingiverse_id":0})
 
-    print("Found image files: ")
+    logger.info("Found image files: ")
     for file in imgfiles:
-        print(file["name"])
-    print("----------------------------------------")
+        logger.info(file["name"])
+    logger.info("----------------------------------------")
 
     ##########################################################################
     ##                    Site specific deployment                          ##
     ##########################################################################
     if destination == 'thingiverse':
-        print("Deploying to Thingiverse!")
+        logger.info("Deploying to Thingiverse!")
         deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
 
     elif destination == 'myminifactory':
-        print('MyMiniFactory deployment not implemented yet, sorry')
-        sys.exit(OS.EX_USAGE)
+        logger.info('MyMiniFactory deployment not implemented yet, sorry')
+        sys.exit(os.EX_USAGE)
 
     elif destination == 'prusaprinters':
-        print('PrusaPrinters deployment not implemented yet, sorry')
-        sys.exit(OS.EX_USAGE)
+        logger.info('PrusaPrinters deployment not implemented yet, sorry')
+        sys.exit(os.EX_USAGE)
 
     elif destination == 'thangs':
-        print('Thangs deployment not implemented yet, sorry')
-        sys.exit(OS.EX_USAGE)
+        logger.info('Thangs deployment not implemented yet, sorry')
+        sys.exit(os.EX_USAGE)
 
 ########## Thingiverse
 def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles):
@@ -482,54 +511,53 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
     
     # check if thing already exists, if id is provided
     if thingdata["thingiverse_id"] != "":
-        thing = json.loads(
-                    requests.get("http://api.thingiverse.com/things/" 
+        thing = json.loads(get("https://api.thingiverse.com/things/"
                                 + str(thingdata["thingiverse_id"]), 
                                 headers=headers).text)
 
         # Check if we returned an error
         if "error" in thing:
             if thing["error"] == "Unauthorized":
-                print("Unauthorized, is your API key correct? Exiting")
+                logger.error("Unauthorized, is your API key correct? Exiting")
                 sys.exit(os.EX_NOPERM)
             if thing["error"] == "Not Found":
-                print("Thing ID specified but Thing not found, exiting")
+                logger.error("Thing ID specified but Thing not found, exiting")
                 sys.exit(os.EX_USAGE)
 
         # compare provided name with found creator name as sanity check
         if thingdata["thingiverse_creator"] == thing["creator"]["name"]:
             mode = "patch"
-            print("Thing already exists, running in patch mode")
+            logger.info("Thing already exists, running in patch mode")
         else:
-            print("""Thing ID specified in thingdata.json does not belong to 
+            logger.error("""Thing ID specified in thingdata.json does not belong to 
                         creator, exiting""")
             sys.exit(os.EX_NOPERM)
 
     else:
         mode = "create"
-        print("No thing ID provided, running in creation mode")
-    print("----------------------------------------")
+        logger.info("No thing ID provided, running in creation mode")
+    logger.info("----------------------------------------")
 
     ########## Thing creation
     # If ID wasn't already found, first create thing
     if mode == "create":
 
-        print()
-        print("Creating thing")
+        logger.info()
+        logger.info("Creating thing")
 
         # initial file creation
         params = {"name":           thingdata["name"],
-                  "thingiverse_license":        thingdata["thingiverse_license"],
-                  "thingiverse_category":       thingdata["thingiverse_category"],
-                 #"description":    currently broken on Thingiverse,
-                 #"instructions":   currently broken on Thingiverse,
-                  "thingiverse_is_wip":         thingdata["thingiverse_is_wip"],
+                  "license":        thingdata["thingiverse_license"],
+                  "category":       thingdata["thingiverse_category"],
+                  "description":    thingdata["thingiverse_description"],
+                  "instructions":   thingdata["thingiverse_instructions"],
+                  "is_wip":         thingdata["thingiverse_is_wip"],
                   "tags":           thingdata["tags"]}
 
-        thing = json.loads(
-                        requests.post("http://api.thingiverse.com/things/",
-                        headers=headers,
-                        data=json.dumps(params)).text)
+        request_content = json.dumps(params)
+        response = requests.post("https://api.thingiverse.com/things/", headers=headers, data=request_content)
+
+        thing = json.loads(response.text)
 
         # Output response to file for debugging
         with open(project_path + "/CreationResponse.json", "w") as f:
@@ -539,8 +567,7 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
 
         # check if valid answer received
         if new_thing_id != "":
-            print("Thing creation succesful, thing ID:")
-            print(new_thing_id)
+            logger.info("Thing creation succesful, thing ID: %s", new_thing_id)
         
         # Update flags document with newly created ID
         thingdata["thingiverse_id"] = new_thing_id
@@ -549,7 +576,7 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
 
         # Output initial creation file for pipeline
         with open(project_path + "/InitialCreation", "w") as f:
-            print("InitialCreation file generated")
+            logger.info("InitialCreation file generated")
             f.write("Initial creation success")
 
 
@@ -557,27 +584,27 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
     # Otherwise, go into patching mode
     elif mode == "patch":
         
-        print("Patching thing")
+        logger.info("Patching thing")
 
         params = {"name":           thingdata["name"],
-                  "thingiverse_license":        thingdata["thingiverse_license"],
-                  "thingiverse_category":       thingdata["thingiverse_category"],
-                 #"description":    description,
-                 #"instructions":   "None provided",
-                  "thingiverse_is_wip":         thingdata["thingiverse_is_wip"],
+                  "license":        thingdata["thingiverse_license"],
+                  "category":       thingdata["thingiverse_category"],
+                  "description":    thingdata["thingiverse_description"],
+                  "instructions":   thingdata["thingiverse_instructions"],
+                  "is_wip":         thingdata["thingiverse_is_wip"],
                   "tags":           thingdata["tags"]}
 
-        requests.patch("http://api.thingiverse.com/things/"
+        patch("https://api.thingiverse.com/things/"
                                     + str(thingdata["thingiverse_id"])
                                     + "/", headers=headers,
                                     data=json.dumps(params))
 
         # wait a tick before pulling an answer
         # since Thingiverse does not populate all answers instantly
-        print("Waiting for Thingiverse to refresh tags in response")
+        logger.info("Waiting for Thingiverse to refresh tags in response")
         time.sleep(2) 
 
-        thing = json.loads(requests.get("http://api.thingiverse.com/things/"
+        thing = json.loads(get("https://api.thingiverse.com/things/"
                                     + str(thingdata["thingiverse_id"])
                                     + "/", headers=headers).text)
 
@@ -589,47 +616,47 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
 
         # Check if valid answer received
         if thing["id"] == thingdata["thingiverse_id"]:
-            print("Thing patching succesful")
+            logger.info("Thing patching succesful")
     
         # Remove InitialCreation file on repeat runs
         if os.path.exists(project_path + "/InitialCreation"):
             os.remove(project_path + "/InitialCreation")
-            print("InitialCreation file removed")
+            logger.info("InitialCreation file removed")
 
 
     # Model file upload
-    print("----------------------------------------")
-    print("Deploying model files:")
+    logger.info("----------------------------------------")
+    logger.info("Deploying model files:")
     thingiverse_deploy_files("/files", modelfiles, "whitelist", thingdata, headers)
 
     # Image upload
-    print("----------------------------------------")
-    print("Deploying images:")
+    logger.info("----------------------------------------")
+    logger.info("Deploying images:")
     thingiverse_deploy_files("/images", imgfiles, modelfiles, thingdata, headers)
     thingiverse_set_image_order(imgfiles, thingdata, headers)
 
     # Publishing
-    print("----------------------------------------")
-    print("Testing if publishing is required")
+    logger.info("----------------------------------------")
+    logger.info("Testing if publishing is required")
     if thingdata["thingiverse_is_published"] and not thing["is_published"]:
-        print("Publishing thing")
+        logger.info("Publishing thing")
         thingiverse_publish_project(thingdata, headers)
 
     elif not thingdata["thingiverse_is_published"]:
-        print("Publishing not requested")
+        logger.info("Publishing not requested")
 
     elif thing["is_published"]:
-        print("Thing already published")
+        logger.info("Thing already published")
 
 
     # Output thing URL to artifact and terminal
     thing_url = "https://thingiverse.com/thing:" + str(thingdata["thingiverse_id"])
-    print("----------------------------------------")
-    print("Deploying done! Thing URL: ")
-    print(thing_url)
-    print("Thing ID:")
-    print(thingdata["thingiverse_id"])
-    print("----------------------------------------")
+    logger.info("----------------------------------------")
+    logger.info("Deploying done! Thing URL: ")
+    logger.info(thing_url)
+    logger.info("Thing ID:")
+    logger.info(thingdata["thingiverse_id"])
+    logger.info("----------------------------------------")
 
     with open(project_path + "/ThingURL.txt", "w") as f:
         f.write(thing_url)
@@ -642,12 +669,29 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
 ##                             main()                                   ##
 ##########################################################################
 def main():
-    
-    print()
-    print("----------------------------------------")
-    print("----------- Threedeploy start ----------")
-    print("----------------------------------------")
 
+    ##########################################################################
+    ##                            Logging                                   ##
+    ##########################################################################
+
+    try:
+        with open(LOGGING_CONFIG_NAME, 'r') as f:
+            d = yaml.safe_load(f)
+            logging.config.dictConfig(d)
+        logger.info("Logging config loaded from file: %s", LOGGING_CONFIG_NAME)
+    except FileNotFoundError:
+        logging.basicConfig(stream=sys.stdout, format=LOGGING_DEFAULT_FORMAT, level=logging.INFO, force=True)
+        logger.info("No logging config (%s) found. Using default settings!", LOGGING_CONFIG_NAME)
+    except (ValueError, TypeError, AttributeError, ImportError) as e:
+        logger.error("Error reading logging config (%s):", LOGGING_CONFIG_NAME)
+        logger.error(e)
+        logger.error("Exiting...")
+        sys.exit(os.EX_CONFIG)
+
+    logger.info("")
+    logger.info("----------------------------------------")
+    logger.info("----------- Threedeploy start ----------")
+    logger.info("----------------------------------------")
 
     ##########################################################################
     ##                            Arguments                                 ##
@@ -655,6 +699,12 @@ def main():
 
     parser = argparse.ArgumentParser(description=
                      "Upload 3D projects to multiple sites automatically")
+
+    # Custom client ID for Thingiverse
+    parser.add_argument("--client-id-thingiverse",
+                        type=str,
+                        default=None,
+                        help="Use a custom client ID")
 
     # Project path
     parser.add_argument("--path", metavar="path", type=str,
@@ -684,9 +734,13 @@ def main():
     "Deploy to Thingiverse if set. "
     "Input Thingiverse API token, generated with --request-token-thingiverse")
 
-    
     args = parser.parse_args()
 
+    # Override thingiverse client id if custom one is provided
+    if args.client_id_thingiverse:
+        global THINGIVERSE_CLIENT_ID
+        logger.info(f"Using custom client id for thingiverse: %s", args.client_id_thingiverse)
+        THINGIVERSE_CLIENT_ID = args.client_id_thingiverse
 
     ##########################################################################
     ##                              Modes                                   ##
@@ -696,10 +750,10 @@ def main():
     if args.create_project:
         # Test path
         if not args.path:
-            print("Please provide project path with --path <ProjectPath>")
+            logger.info("Please provide project path with --path <ProjectPath>")
             sys.exit(os.EX_USAGE)
         if not os.path.isdir(args.path):
-            print("The path specified does not exist, exiting")
+            logger.info("The path specified does not exist, exiting")
             sys.exit(os.EX_USAGE)
 
         create_initial_folder_structure(args.path)
@@ -716,10 +770,10 @@ def main():
 
         # Test path
         if not args.path:
-            print("Please provide project path with --path <ProjectPath>")
+            logger.info("Please provide project path with --path <ProjectPath>")
             sys.exit(os.EX_USAGE)
         if not os.path.isdir(args.path):
-            print("The path specified does not exist, exiting")
+            logger.info("The path specified does not exist, exiting")
             sys.exit(os.EX_USAGE)
 
         # call deployment function, passing destination input
@@ -733,7 +787,7 @@ def main():
         #    deploy_project(args.path, args.deploy-project-thingiverse, 'thangs')
 
     else:
-        print("No mode chosen, use --help to figure out which mode you want")
+        logger.info("No mode chosen, use --help to figure out which mode you want")
         sys.exit(os.EX_USAGE)
 
     # exit with exit code 0
