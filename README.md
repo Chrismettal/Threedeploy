@@ -28,6 +28,8 @@ Additionaly, there is a [project creation mode](#project-creation-mode) to creat
 
 This is a WIP. While all functions except updating Thing summary work, there is little in the way of error handling or sanity checking of data.
 
+- [ ] Thing deployment should sanity check `thingdata.json` instead of just crashing on missing entries
+
 :construction: :construction: :construction:
 
 ---
