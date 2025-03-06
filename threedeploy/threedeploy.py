@@ -542,7 +542,7 @@ def deploy_thingiverse(api_token, thingdata, project_path, modelfiles, imgfiles)
     # If ID wasn't already found, first create thing
     if mode == "create":
 
-        logger.info()
+        logger.info("")
         logger.info("Creating thing")
 
         # initial file creation
