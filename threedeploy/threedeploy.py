@@ -345,7 +345,9 @@ def create_initial_folder_structure(project_path):
                 "thingiverse_is_wip"        :True,
                 "thingiverse_license"       :"gpl",
                 "thingiverse_category"      :"3D Printing",
-                "thingiverse_is_published"  :False
+                "thingiverse_is_published"  :False,
+                "thingiverse_description"   :"YourDescriptionHere",
+                "thingiverse_instructions"  :"YourInstructionsHere" 
     }
     create_textfile(path = project_path + "/thingdata.json",
                     data =json.dumps(thingdata, indent=4))
